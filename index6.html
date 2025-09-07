@@ -1,233 +1,512 @@
 <!DOCTYPE html>
+
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>Split Frames</title>
-<style>
-  :root{
-    --menu-h: 46px;
-    --menu-transition: 0.35s cubic-bezier(0.4,0.0,0.2,1);
-  }
-  html,body{
-    height:100%;
-    margin:0;
-    background:#fff;
-  }
-  .app{
-    height:100vh;
-    padding: calc(env(safe-area-inset-top)) calc(env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) calc(env(safe-area-inset-left));
-    box-sizing:border-box;
-    display:flex;
-    flex-direction:column;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  /* menu */
-  .menu{
-    position:fixed;
-    top:env(safe-area-inset-top);
-    left:50%;
-    transform:translate(-50%,-150%);
-    opacity:0;
-    height:var(--menu-h);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:20;
-    transition:opacity var(--menu-transition), transform var(--menu-transition);
-  }
-  .menu.show{
-    transform:translate(-50%,0);
-    opacity:1;
-  }
-  .menu-inner{
-    background:rgba(20,20,40,0.5);
-    border-radius:calc(var(--menu-h)/1.5);
-    padding:6px 8px;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    backdrop-filter: blur(10px);
-  }
-  .menu input[type="url"]{
-    flex:1;
-    min-width:0;
-    height:30px;
-    border-radius:6px;
-    border:1px solid rgba(255,255,255,0.2);
-    background:rgba(255,255,255,0.1);
-    padding:4px 8px;
-    color:#fff;
-    font-size:13px;
-    outline:none;
-  }
-  .menu button{
-    height:30px;
-    border:0;
-    padding:0 8px;
-    border-radius:6px;
-    background:rgba(255,255,255,0.2);
-    color:#fff;
-    font-size:12px;
-    cursor:pointer;
-    user-select:none;
-  }
+```
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #000;
+    }
 
-  /* toggle icon */
-  .menu-toggle{
-    position:fixed;
-    top:calc(env(safe-area-inset-top) + 10px);
-    right:calc(env(safe-area-inset-right) + 10px);
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:rgba(0,0,0,0.3);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    backdrop-filter:blur(8px);
-    z-index:30;
-  }
-  .menu-toggle span{
-    font-size:18px;
-    color:#fff;
-    line-height:1;
-  }
+    body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        height: 100vh;
+        height: 100dvh;
+    }
 
-  /* container frames */
-  .split{
-    flex:1;
-    display:flex;
-    max-width:100%;
-    align-items:stretch;
-    flex-direction:column; /* dọc */
-  }
-  @media (orientation: landscape){
-    .split{ flex-direction:row; } /* ngang */
-  }
-  .pane{ flex:1; min-height:0; }
-  iframe{
-    flex:1;
-    width:100%;
-    height:100%;
-    border:0;
-    display:block;
-    background:#fff;
-  }
+    .main-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .frames-wrapper {
+        flex: 1;
+        display: flex;
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .frames-wrapper.layout-vertical {
+        flex-direction: column;
+    }
+
+    .frames-wrapper.layout-horizontal {
+        flex-direction: row;
+    }
+
+    .frame {
+        flex: 1;
+        border: none;
+        background: #fff;
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        min-height: 0;
+        min-width: 0;
+    }
+
+    .frame.frame-hidden {
+        flex: 0;
+        min-height: 0;
+        min-width: 0;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .menu-toggle {
+        position: fixed;
+        top: calc(env(safe-area-inset-top) + 15px);
+        right: calc(env(safe-area-inset-right) + 15px);
+        z-index: 10000;
+        width: 50px;
+        height: 50px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+
+    .menu-toggle:hover {
+        background: rgba(0, 0, 0, 0.95);
+        transform: scale(1.05);
+    }
+
+    .menu-toggle:active {
+        transform: scale(0.95);
+    }
+
+    .menu-panel {
+        position: fixed;
+        top: calc(env(safe-area-inset-top) + 75px);
+        right: calc(env(safe-area-inset-right) + 15px);
+        z-index: 9999;
+        min-width: 320px;
+        max-width: 90vw;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .menu-panel.menu-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+    }
+
+    .menu-group {
+        margin-bottom: 25px;
+    }
+
+    .menu-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .menu-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .layout-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .layout-btn {
+        padding: 12px 16px;
+        border: 2px solid #e8e8e8;
+        border-radius: 10px;
+        background: #fff;
+        color: #333;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .layout-btn:hover {
+        border-color: #007AFF;
+        background: #f0f8ff;
+    }
+
+    .layout-btn.layout-active {
+        border-color: #007AFF;
+        background: #007AFF;
+        color: #fff;
+    }
+
+    .url-input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .url-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 2px solid #e8e8e8;
+        border-radius: 10px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.3s ease;
+        background: #fff;
+    }
+
+    .url-input:focus {
+        border-color: #007AFF;
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .load-btn {
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #007AFF, #0056CC);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .load-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 122, 255, 0.3);
+    }
+
+    .load-btn:active {
+        transform: translateY(0);
+    }
+
+    .view-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .view-btn {
+        padding: 12px 8px;
+        border: 2px solid #e8e8e8;
+        border-radius: 10px;
+        background: #fff;
+        color: #333;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .view-btn:hover {
+        border-color: #007AFF;
+        background: #f0f8ff;
+    }
+
+    .view-btn.view-active {
+        border-color: #007AFF;
+        background: #007AFF;
+        color: #fff;
+    }
+
+    .utility-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .utility-btn {
+        padding: 12px 16px;
+        border: 2px solid #e8e8e8;
+        border-radius: 10px;
+        background: #fff;
+        color: #333;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .utility-btn:hover {
+        border-color: #34C759;
+        background: #f0fff4;
+    }
+
+    /* Responsive cho mobile */
+    @media (max-width: 768px) {
+        .menu-panel {
+            left: calc(env(safe-area-inset-left) + 15px);
+            right: calc(env(safe-area-inset-right) + 15px);
+            min-width: auto;
+            max-width: none;
+        }
+
+        .menu-toggle {
+            top: calc(env(safe-area-inset-top) + 10px);
+            right: calc(env(safe-area-inset-right) + 10px);
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+        }
+
+        .view-controls {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .layout-controls {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+    }
+
+    /* iOS Safari optimizations */
+    @supports (-webkit-touch-callout: none) {
+        body {
+            height: -webkit-fill-available;
+        }
+    }
+
+    /* Ẩn scrollbar */
+    ::-webkit-scrollbar {
+        display: none;
+    }
 </style>
+```
+
 </head>
 <body>
-<div class="app">
-  <div class="menu" id="menuBar">
-    <div class="menu-inner" id="menuInner">
-      <input id="urlInput" type="url" placeholder="Nhập URL..." />
-      <button id="loadLeft">←</button>
-      <button id="loadRight">→</button>
-      <button id="loadBoth">2</button>
-      <button id="full1">F1</button>
-      <button id="full2">F2</button>
-      <button id="clearBoth">X</button>
-    </div>
-  </div>
+    <div class="main-container">
+        <!-- Menu Toggle Button -->
+        <button class="menu-toggle" onclick="toggleMenu()">⋯</button>
 
-  <div class="menu-toggle" id="menuToggle">
-    <span>⋮</span>
-  </div>
+```
+    <!-- Menu Panel -->
+    <div class="menu-panel" id="menuPanel">
+        <!-- Layout Controls -->
+        <div class="menu-group">
+            <div class="menu-title">Bố cục</div>
+            <div class="layout-controls">
+                <button class="layout-btn layout-active" onclick="setLayout('vertical')">Dọc ⬍</button>
+                <button class="layout-btn" onclick="setLayout('horizontal')">Ngang ⬌</button>
+            </div>
+        </div>
 
-  <div class="split" id="splitArea">
-    <div class="pane" id="leftPane">
-      <iframe id="leftFrame" sandbox="allow-forms allow-scripts" src="about:blank"></iframe>
+        <!-- Frame 1 Controls -->
+        <div class="menu-group">
+            <div class="menu-title">Frame 1</div>
+            <div class="url-input-group">
+                <input type="url" class="url-input" id="urlInput1" placeholder="Nhập URL cho Frame 1..." value="https://www.google.com">
+                <button class="load-btn" onclick="loadFrame(1)">Tải</button>
+            </div>
+        </div>
+
+        <!-- Frame 2 Controls -->
+        <div class="menu-group">
+            <div class="menu-title">Frame 2</div>
+            <div class="url-input-group">
+                <input type="url" class="url-input" id="urlInput2" placeholder="Nhập URL cho Frame 2..." value="https://www.youtube.com">
+                <button class="load-btn" onclick="loadFrame(2)">Tải</button>
+            </div>
+        </div>
+
+        <!-- View Controls -->
+        <div class="menu-group">
+            <div class="menu-title">Hiển thị</div>
+            <div class="view-controls">
+                <button class="view-btn view-active" onclick="setView('both')">Cả hai</button>
+                <button class="view-btn" onclick="setView('frame1')">Frame 1</button>
+                <button class="view-btn" onclick="setView('frame2')">Frame 2</button>
+            </div>
+        </div>
+
+        <!-- Utility Controls -->
+        <div class="menu-group">
+            <div class="menu-title">Tiện ích</div>
+            <div class="utility-controls">
+                <button class="utility-btn" onclick="refreshFrames()">🔄 Làm mới</button>
+                <button class="utility-btn" onclick="clearFrames()">🗑️ Xóa hết</button>
+            </div>
+        </div>
     </div>
-    <div class="pane" id="rightPane">
-      <iframe id="rightFrame" sandbox="allow-forms allow-scripts" src="about:blank"></iframe>
+
+    <!-- Frames Wrapper -->
+    <div class="frames-wrapper layout-vertical" id="framesWrapper">
+        <iframe class="frame" id="frame1" src="https://www.google.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"></iframe>
+        <iframe class="frame" id="frame2" src="https://www.youtube.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"></iframe>
     </div>
-  </div>
 </div>
 
 <script>
-(function(){
-  const input = document.getElementById('urlInput');
-  const left = document.getElementById('leftFrame');
-  const right = document.getElementById('rightFrame');
-  const loadLeft = document.getElementById('loadLeft');
-  const loadRight = document.getElementById('loadRight');
-  const loadBoth = document.getElementById('loadBoth');
-  const clearBoth = document.getElementById('clearBoth');
-  const full1 = document.getElementById('full1');
-  const full2 = document.getElementById('full2');
-  const leftPane = document.getElementById('leftPane');
-  const rightPane = document.getElementById('rightPane');
-  const menu = document.getElementById('menuBar');
-  const toggle = document.getElementById('menuToggle');
+    let isMenuOpen = false;
+    let currentLayout = 'vertical';
+    let currentView = 'both';
 
-  function normalizeUrl(u){
-    if(!u) return '';
-    if(!/^https?:\/\//i.test(u)){
-      return 'https://' + u;
+    // Toggle Menu
+    function toggleMenu() {
+        isMenuOpen = !isMenuOpen;
+        const menuPanel = document.getElementById('menuPanel');
+        
+        if (isMenuOpen) {
+            menuPanel.classList.add('menu-visible');
+        } else {
+            menuPanel.classList.remove('menu-visible');
+        }
     }
-    return u;
-  }
 
-  function setFrameSrc(frame, url){
-    if(!url){
-      frame.removeAttribute('src');
-      return;
+    // Set Layout
+    function setLayout(layout) {
+        currentLayout = layout;
+        const wrapper = document.getElementById('framesWrapper');
+        const buttons = document.querySelectorAll('.layout-btn');
+        
+        wrapper.className = `frames-wrapper layout-${layout}`;
+        
+        buttons.forEach(btn => btn.classList.remove('layout-active'));
+        event.target.classList.add('layout-active');
     }
-    frame.src = url;
-  }
 
-  loadLeft.onclick = ()=> setFrameSrc(left, normalizeUrl(input.value.trim()));
-  loadRight.onclick = ()=> setFrameSrc(right, normalizeUrl(input.value.trim()));
-  loadBoth.onclick = ()=>{
-    const url = normalizeUrl(input.value.trim());
-    setFrameSrc(left,url); setFrameSrc(right,url);
-  };
-  clearBoth.onclick = ()=>{
-    input.value='';
-    leftPane.style.display = rightPane.style.display = 'flex';
-    setFrameSrc(left,''); setFrameSrc(right,'');
-  };
-
-  full1.onclick = ()=>{
-    leftPane.style.display='flex';
-    rightPane.style.display='none';
-  };
-  full2.onclick = ()=>{
-    leftPane.style.display='none';
-    rightPane.style.display='flex';
-  };
-
-  // Enter = mở cả 2 frame
-  input.addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){
-      e.preventDefault();
-      const url = normalizeUrl(input.value.trim());
-      setFrameSrc(left,url);
-      setFrameSrc(right,url);
-      menu.classList.remove('show');
+    // Load Frame
+    function loadFrame(frameNumber) {
+        const urlInput = document.getElementById(`urlInput${frameNumber}`);
+        const frame = document.getElementById(`frame${frameNumber}`);
+        let url = urlInput.value.trim();
+        
+        if (!url) return;
+        
+        // Auto-add https if no protocol
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+        }
+        
+        frame.src = url;
     }
-  });
 
-  // toggle menu + focus input
-  toggle.onclick = ()=>{
-    menu.classList.toggle('show');
-    if(menu.classList.contains('show')){
-      setTimeout(()=> input.focus(), 100);
+    // Set View
+    function setView(view) {
+        currentView = view;
+        const frame1 = document.getElementById('frame1');
+        const frame2 = document.getElementById('frame2');
+        const buttons = document.querySelectorAll('.view-btn');
+        
+        // Remove all active classes
+        buttons.forEach(btn => btn.classList.remove('view-active'));
+        
+        // Reset frames
+        frame1.classList.remove('frame-hidden');
+        frame2.classList.remove('frame-hidden');
+        
+        if (view === 'frame1') {
+            frame2.classList.add('frame-hidden');
+            buttons[1].classList.add('view-active');
+        } else if (view === 'frame2') {
+            frame1.classList.add('frame-hidden');
+            buttons[2].classList.add('view-active');
+        } else {
+            buttons[0].classList.add('view-active');
+        }
     }
-  };
 
-  // click ra ngoài -> ẩn menu
-  document.addEventListener('click', e=>{
-    if(!menu.contains(e.target) && !toggle.contains(e.target)){
-      menu.classList.remove('show');
+    // Refresh Frames
+    function refreshFrames() {
+        const frame1 = document.getElementById('frame1');
+        const frame2 = document.getElementById('frame2');
+        
+        frame1.src = frame1.src;
+        frame2.src = frame2.src;
     }
-  });
 
-  document.addEventListener('gesturestart', e=>e.preventDefault());
-})();
+    // Clear Frames
+    function clearFrames() {
+        document.getElementById('frame1').src = 'about:blank';
+        document.getElementById('frame2').src = 'about:blank';
+        document.getElementById('urlInput1').value = '';
+        document.getElementById('urlInput2').value = '';
+    }
+
+    // Auto-hide menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const menuPanel = document.getElementById('menuPanel');
+        const menuToggle = document.querySelector('.menu-toggle');
+        
+        if (!menuPanel.contains(event.target) && !menuToggle.contains(event.target)) {
+            if (isMenuOpen) {
+                toggleMenu();
+            }
+        }
+    });
+
+    // Prevent menu from closing when clicking inside
+    document.getElementById('menuPanel').addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+
+    // Enter key support for URL inputs
+    document.getElementById('urlInput1').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadFrame(1);
+        }
+    });
+
+    document.getElementById('urlInput2').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadFrame(2);
+        }
+    });
+
+    // Handle viewport changes for mobile
+    function handleViewportChange() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('orientationchange', handleViewportChange);
+    handleViewportChange();
+
+    // Prevent zoom on input focus (iOS)
+    document.addEventListener('touchstart', function() {}, true);
 </script>
+```
+
 </body>
 </html>
