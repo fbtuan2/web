@@ -291,11 +291,10 @@
         /* Responsive cho mobile */
         @media (max-width: 768px) {
             .menu-panel {
-                left: calc(env(safe-area-inset-left) + 8px);
-                right: calc(env(safe-area-inset-right) + 8px);
-                width: auto;
-                max-width: none;
-                padding: 10px;
+                width: 160px;
+                max-width: calc(25vw);
+                min-width: 140px;
+                padding: 6px;
             }
 
             .menu-toggle {
@@ -308,39 +307,42 @@
 
             .view-controls {
                 grid-template-columns: 1fr;
-                gap: 3px;
+                gap: 2px;
             }
 
             .layout-controls {
                 grid-template-columns: 1fr;
-                gap: 4px;
+                gap: 2px;
             }
 
             .menu-group {
-                margin-bottom: 8px;
+                margin-bottom: 5px;
             }
 
             .url-input {
-                font-size: 9px;
-                padding: 5px 6px;
+                font-size: 7px;
+                padding: 3px 4px;
             }
 
             .load-btn {
-                padding: 5px 8px;
-                font-size: 8px;
+                padding: 3px 5px;
+                font-size: 6px;
             }
 
             .menu-title {
-                font-size: 8px;
-                margin-bottom: 4px;
+                font-size: 7px;
+                margin-bottom: 3px;
             }
         }
 
         /* Auto scale on zoom */
         @media (max-width: 480px) {
             .menu-panel {
-                padding: 8px;
-                border-radius: 8px;
+                width: 140px;
+                max-width: calc(30vw);
+                min-width: 120px;
+                padding: 5px;
+                border-radius: 6px;
             }
 
             .menu-toggle {
@@ -350,17 +352,18 @@
             }
 
             .menu-title {
-                font-size: 7px;
-                margin-bottom: 3px;
+                font-size: 6px;
+                margin-bottom: 2px;
             }
 
             .url-input, .layout-btn, .view-btn, .utility-btn, .load-btn {
-                font-size: 7px;
-                padding: 4px 6px;
+                font-size: 6px;
+                padding: 3px 4px;
             }
 
             .view-btn {
-                padding: 4px 3px;
+                padding: 3px 2px;
+                font-size: 5px;
             }
         }
 
@@ -445,8 +448,8 @@
 
         <!-- Frames Wrapper -->
         <div class="frames-wrapper layout-vertical" id="framesWrapper">
-            <iframe class="frame" id="frame1" src="https://www.google.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"></iframe>
-            <iframe class="frame" id="frame2" src="https://www.youtube.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"></iframe>
+            <iframe class="frame" id="frame1" src="https://www.google.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"></iframe>
+            <iframe class="frame" id="frame2" src="https://www.youtube.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"></iframe>
         </div>
     </div>
 
