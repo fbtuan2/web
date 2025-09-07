@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Split Frames</title>
+<style>
+  :root{
+    --gap: 8px;
+    --menu-h: 52px;
+    --bg: linear-gradient(135deg,#0f172a,#0b3a67);
+    --accent: #7afcff;
+    --glass: rgba(20,20,40,0.5);
+    --radius: 12px;
+    --menu-transition: 0.35s cubic-bezier(0.4,0.0,0.2,1);
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:#e6f0ff;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  }
+  .app{
+    height:100vh;
+    padding: calc(env(safe-area-inset-top)) calc(env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) calc(env(safe-area-inset-left));
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap);
+  }
+
+  /* menu */
+  .menu{
+    position:fixed;
+    top:env(safe-area-inset-top);
+    left:50%;
+    transform:translate(-50%,-150%);
+    opacity:0;
+    height:var(--menu-h);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+    transition:opacity var(--menu-transition), transform var(--menu-transition);
+  }
+  .menu.show{
+    transform:translate(-50%,0);
+    opacity:1;
+  }
+  .menu-inner{
+    background:var(--glass);
+    border-radius:calc(var(--menu-h)/1.5);
+    padding:6px 10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    backdrop-filter: blur(12px);
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  }
+  .menu input[type="url"]{
+    flex:1;
+    min-width:0;
+    height:32px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.05);
+    padding:4px 8px;
+    color:inherit;
+    font-size:13px;
+    outline:none;
+  }
+  .menu button{
+    height:32px;
+    border:0;
+    padding:0 10px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.1);
+    color:#fff;
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  /* toggle icon */
+  .menu-toggle{
+    position:fixed;
+    top:calc(env(safe-area-inset-top) + 10px);
+    right:calc(env(safe-area-inset-right) + 10px);
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    backdrop-filter:blur(10px);
+    z-index:30;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+  }
+  .menu-toggle span{
+    font-size:18px;
+    color:#fff;
+    line-height:1;
+  }
+
+  /* container frames */
+  .split{
+    flex:1;
+    display:flex;
+    gap:var(--gap);
+    max-width:100%;
+    align-items:stretch;
+    flex-direction:column; /* dọc */
+  }
+  @media (orientation: landscape){
+    .split{ flex-direction:row; } /* ngang */
+  }
+
+  .pane{
+    flex:1;
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:#071428;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    box-shadow:0 8px 40px rgba(2,6,23,0.6);
+  }
+  iframe{
+    flex:1;
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+    background:white;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="menu" id="menuBar">
+    <div class="menu-inner" id="menuInner">
+      <input id="urlInput" type="url" placeholder="Nhập URL..." />
+      <button id="loadLeft">←</button>
+      <button id="loadRight">→</button>
+      <button id="loadBoth">2</button>
+      <button id="clearBoth">X</button>
+      <button id="full1">F1</button>
+      <button id="full2">F2</button>
+    </div>
+  </div>
+
+  <div class="menu-toggle" id="menuToggle">
+    <span>⋮</span>
+  </div>
+
+  <div class="split" id="splitArea">
+    <div class="pane" id="leftPane">
+      <iframe id="leftFrame" sandbox="allow-forms allow-scripts" srcdoc="
+        <base target='_self'>
+        <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#9fd7ff}</style>
+        <div>Khung 1</div>"></iframe>
+    </div>
+    <div class="pane" id="rightPane">
+      <iframe id="rightFrame" sandbox="allow-forms allow-scripts" srcdoc="
+        <base target='_self'>
+        <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#ffdc9f}</style>
+        <div>Khung 2</div>"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById('urlInput');
+  const left = document.getElementById('leftFrame');
+  const right = document.getElementById('rightFrame');
+  const loadLeft = document.getElementById('loadLeft');
+  const loadRight = document.getElementById('loadRight');
+  const loadBoth = document.getElementById('loadBoth');
+  const clearBoth = document.getElementById('clearBoth');
+  const full1 = document.getElementById('full1');
+  const full2 = document.getElementById('full2');
+  const leftPane = document.getElementById('leftPane');
+  const rightPane = document.getElementById('rightPane');
+  const menu = document.getElementById('menuBar');
+  const toggle = document.getElementById('menuToggle');
+
+  function normalizeUrl(u){
+    if(!u) return '';
+    try{
+      const maybe = new URL(u, window.location.href);
+      if(!maybe.protocol || maybe.protocol === ':'){
+        return 'https://' + u;
+      }
+      return maybe.href;
+    }catch(e){
+      return u.indexOf('://') === -1 ? 'https://' + u : u;
+    }
+  }
+
+  function setFrameSrc(frame, url){
+    if(!url){
+      frame.removeAttribute('src');
+      frame.srcdoc = "<base target='_self'><style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#9fd7ff;font-family:system-ui}</style><div>Empty</div>";
+      return;
+    }
+    frame.src = url;
+  }
+
+  loadLeft.onclick = ()=> setFrameSrc(left, normalizeUrl(input.value.trim()));
+  loadRight.onclick = ()=> setFrameSrc(right, normalizeUrl(input.value.trim()));
+  loadBoth.onclick = ()=>{
+    const url = normalizeUrl(input.value.trim());
+    setFrameSrc(left,url); setFrameSrc(right,url);
+  };
+  clearBoth.onclick = ()=>{
+    input.value='';
+    setFrameSrc(left,''); setFrameSrc(right,'');
+    leftPane.style.display = rightPane.style.display = 'flex';
+  };
+
+  full1.onclick = ()=>{
+    leftPane.style.display='flex';
+    rightPane.style.display='none';
+  };
+  full2.onclick = ()=>{
+    leftPane.style.display='none';
+    rightPane.style.display='flex';
+  };
+
+  // toggle menu
+  toggle.onclick = ()=>{
+    menu.classList.toggle('show');
+  };
+
+  // click ngoài để ẩn menu
+  document.addEventListener('click', e=>{
+    if(!menu.contains(e.target) && !toggle.contains(e.target)){
+      menu.classList.remove('show');
+    }
+  });
+
+  document.addEventListener('gesturestart', e=>e.preventDefault());
+})();
+</script>
+</body>
+</html>
