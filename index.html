@@ -1,733 +1,233 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Dual Frame Viewer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            color: #fff;
-            min-height: 100vh;
-            overflow: hidden;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
-        
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        
-        .frames-container {
-            display: flex;
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .vertical-divider {
-            position: absolute;
-            width: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            cursor: col-resize;
-            z-index: 10;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            transform: translateX(-50%);
-            transition: background 0.3s;
-        }
-        
-        .horizontal-divider {
-            position: absolute;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            cursor: row-resize;
-            z-index: 10;
-            top: 50%;
-            left: 0;
-            right: 0;
-            transform: translateY(-50%);
-            transition: background 0.3s;
-            display: none;
-        }
-        
-        .vertical-divider:hover, .horizontal-divider:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-        
-        .frame-wrapper {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            background: #000;
-        }
-        
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: #fff;
-        }
-        
-        .frame-title {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            z-index: 5;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        
-        .control-menu {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 100;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s, opacity 0.3s;
-            width: 320px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .control-menu.hidden {
-            transform: translateY(100px);
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .menu-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 101;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s;
-        }
-        
-        .menu-toggle:hover {
-            transform: scale(1.1);
-        }
-        
-        .url-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .url-input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .url-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            outline: none;
-        }
-        
-        .url-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        .btn {
-            padding: 12px 15px;
-            border: none;
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            min-width: 45px;
-        }
-        
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .btn i {
-            margin-right: 5px;
-        }
-        
-        .layout-controls {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .orientation-controls {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #fdbb2d;
-        }
-        
-        .frame-full {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 50;
-        }
-        
-        .hidden-frame {
-            display: none;
-        }
-        
-        /* Landscape mode for mobile */
-        @media (max-width: 768px) and (orientation: landscape) {
-            body {
-                padding: 0;
-            }
-            
-            .frames-container {
-                flex-direction: row;
-                height: 100vh;
-                width: 100vw;
-            }
-            
-            .vertical-divider {
-                display: block;
-                height: 100%;
-            }
-            
-            .horizontal-divider {
-                display: none;
-            }
-            
-            .control-menu {
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-                width: auto;
-                max-height: 70vh;
-            }
-            
-            .layout-controls {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .orientation-controls {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .btn {
-                padding: 12px;
-            }
-            
-            .btn span {
-                display: none;
-            }
-            
-            .btn i {
-                margin-right: 0;
-                font-size: 16px;
-            }
-            
-            .menu-toggle {
-                bottom: 10px;
-                right: 10px;
-                width: 50px;
-                height: 50px;
-            }
-        }
-        
-        @media (max-width: 768px) and (orientation: portrait) {
-            .frames-container {
-                flex-direction: column;
-            }
-            
-            .vertical-divider {
-                display: none;
-            }
-            
-            .horizontal-divider {
-                display: block;
-            }
-            
-            .control-menu {
-                bottom: 80px;
-                right: 10px;
-                left: 10px;
-                width: auto;
-            }
-            
-            .layout-controls {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .orientation-controls {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .btn {
-                padding: 12px;
-            }
-            
-            .btn span {
-                display: none;
-            }
-            
-            .btn i {
-                margin-right: 0;
-            }
-        }
-        
-        /* Custom scrollbar for control menu */
-        .control-menu::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .control-menu::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-        
-        .control-menu::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
-        
-        .control-menu::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Notch area optimization */
-        .notch-spacer {
-            display: none;
-        }
-        
-        @supports(padding: max(0px)) {
-            .container {
-                padding-left: max(env(safe-area-inset-left), 10px);
-                padding-right: max(env(safe-area-inset-right), 10px);
-                padding-top: max(env(safe-area-inset-top), 10px);
-                padding-bottom: max(env(safe-area-inset-bottom), 10px);
-            }
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Split Frames</title>
+<style>
+  :root{
+    --menu-h: 46px;
+    --menu-transition: 0.35s cubic-bezier(0.4,0.0,0.2,1);
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    background:#fff;
+  }
+  .app{
+    height:100vh;
+    padding: calc(env(safe-area-inset-top)) calc(env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) calc(env(safe-area-inset-left));
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* menu */
+  .menu{
+    position:fixed;
+    top:env(safe-area-inset-top);
+    left:50%;
+    transform:translate(-50%,-150%);
+    opacity:0;
+    height:var(--menu-h);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+    transition:opacity var(--menu-transition), transform var(--menu-transition);
+  }
+  .menu.show{
+    transform:translate(-50%,0);
+    opacity:1;
+  }
+  .menu-inner{
+    background:rgba(20,20,40,0.5);
+    border-radius:calc(var(--menu-h)/1.5);
+    padding:6px 8px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    backdrop-filter: blur(10px);
+  }
+  .menu input[type="url"]{
+    flex:1;
+    min-width:0;
+    height:30px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.1);
+    padding:4px 8px;
+    color:#fff;
+    font-size:13px;
+    outline:none;
+  }
+  .menu button{
+    height:30px;
+    border:0;
+    padding:0 8px;
+    border-radius:6px;
+    background:rgba(255,255,255,0.2);
+    color:#fff;
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  /* toggle icon */
+  .menu-toggle{
+    position:fixed;
+    top:calc(env(safe-area-inset-top) + 10px);
+    right:calc(env(safe-area-inset-right) + 10px);
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.3);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    backdrop-filter:blur(8px);
+    z-index:30;
+  }
+  .menu-toggle span{
+    font-size:18px;
+    color:#fff;
+    line-height:1;
+  }
+
+  /* container frames */
+  .split{
+    flex:1;
+    display:flex;
+    max-width:100%;
+    align-items:stretch;
+    flex-direction:column; /* dọc */
+  }
+  @media (orientation: landscape){
+    .split{ flex-direction:row; } /* ngang */
+  }
+  .pane{ flex:1; min-height:0; }
+  iframe{
+    flex:1;
+    width:100%;
+    height:100%;
+    border:0;
+    display:block;
+    background:#fff;
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="frames-container">
-            <div class="frame-wrapper">
-                <div class="frame-title">Frame 1</div>
-                <iframe id="frame1" src="https://example.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
-            </div>
-            
-            <div class="vertical-divider" id="verticalDivider"></div>
-            <div class="horizontal-divider" id="horizontalDivider"></div>
-            
-            <div class="frame-wrapper">
-                <div class="frame-title">Frame 2</div>
-                <iframe id="frame2" src="https://wikipedia.org" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
-            </div>
-        </div>
+<div class="app">
+  <div class="menu" id="menuBar">
+    <div class="menu-inner" id="menuInner">
+      <input id="urlInput" type="url" placeholder="Nhập URL..." />
+      <button id="loadLeft">←</button>
+      <button id="loadRight">→</button>
+      <button id="loadBoth">2</button>
+      <button id="full1">F1</button>
+      <button id="full2">F2</button>
+      <button id="clearBoth">X</button>
     </div>
-    
-    <div class="menu-toggle" id="menuToggle">
-        <i class="fas fa-bars"></i>
-    </div>
-    
-    <div class="control-menu" id="controlMenu">
-        <div class="url-section">
-            <div class="section-title">URL Frame 1</div>
-            <div class="url-input-group">
-                <input type="text" class="url-input" id="urlInput1" placeholder="Nhập URL cho frame 1" value="https://example.com">
-                <button class="btn clear-btn" id="clearBtn1"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div class="section-title">URL Frame 2</div>
-            <div class="url-input-group">
-                <input type="text" class="url-input" id="urlInput2" placeholder="Nhập URL cho frame 2" value="https://wikipedia.org">
-                <button class="btn clear-btn" id="clearBtn2"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-        
-        <div class="section-title">Chế độ hiển thị</div>
-        <div class="layout-controls">
-            <button class="btn" id="fullFrame1"><i class="fas fa-expand"></i> <span>Full 1</span></button>
-            <button class="btn" id="fullFrame2"><i class="fas fa-expand"></i> <span>Full 2</span></button>
-            <button class="btn" id="resetSplit"><i class="fas fa-columns"></i> <span>Chia đôi</span></button>
-            <button class="btn" id="swapFrames"><i class="fas fa-exchange-alt"></i> <span>Đổi chỗ</span></button>
-        </div>
-        
-        <div class="section-title">Bố cục</div>
-        <div class="orientation-controls">
-            <button class="btn" id="verticalLayout"><i class="fas fa-arrows-alt-h"></i> <span>Dọc</span></button>
-            <button class="btn" id="horizontalLayout"><i class="fas fa-arrows-alt-v"></i> <span>Ngang</span></button>
-            <button class="btn" id="centerTop"><i class="fas fa-arrow-down"></i> <span>Trên</span></button>
-            <button class="btn" id="centerLeft"><i class="fas fa-arrow-right"></i> <span>Trái</span></button>
-        </div>
-    </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elements
-            const frame1 = document.getElementById('frame1');
-            const frame2 = document.getElementById('frame2');
-            const frameWrappers = document.querySelectorAll('.frame-wrapper');
-            const verticalDivider = document.getElementById('verticalDivider');
-            const horizontalDivider = document.getElementById('horizontalDivider');
-            const urlInput1 = document.getElementById('urlInput1');
-            const urlInput2 = document.getElementById('urlInput2');
-            const clearBtn1 = document.getElementById('clearBtn1');
-            const clearBtn2 = document.getElementById('clearBtn2');
-            const menuToggle = document.getElementById('menuToggle');
-            const controlMenu = document.getElementById('controlMenu');
-            const fullFrame1Btn = document.getElementById('fullFrame1');
-            const fullFrame2Btn = document.getElementById('fullFrame2');
-            const resetSplitBtn = document.getElementById('resetSplit');
-            const swapFramesBtn = document.getElementById('swapFrames');
-            const verticalLayoutBtn = document.getElementById('verticalLayout');
-            const horizontalLayoutBtn = document.getElementById('horizontalLayout');
-            const centerTopBtn = document.getElementById('centerTop');
-            const centerLeftBtn = document.getElementById('centerLeft');
-            const framesContainer = document.querySelector('.frames-container');
-            
-            // Variables
-            let isDragging = false;
-            let currentLayout = 'vertical'; // 'vertical' or 'horizontal'
-            
-            // Detect orientation change
-            function handleOrientationChange() {
-                if (window.innerWidth <= 768) {
-                    if (window.matchMedia("(orientation: landscape)").matches) {
-                        // Landscape mode
-                        framesContainer.style.flexDirection = 'row';
-                        verticalDivider.style.display = 'block';
-                        horizontalDivider.style.display = 'none';
-                        currentLayout = 'vertical';
-                        
-                        // Adjust for notch areas
-                        document.body.style.paddingLeft = 'env(safe-area-inset-left)';
-                        document.body.style.paddingRight = 'env(safe-area-inset-right)';
-                    } else {
-                        // Portrait mode
-                        framesContainer.style.flexDirection = 'column';
-                        verticalDivider.style.display = 'none';
-                        horizontalDivider.style.display = 'block';
-                        currentLayout = 'horizontal';
-                        
-                        // Reset padding for portrait
-                        document.body.style.paddingLeft = '0';
-                        document.body.style.paddingRight = '0';
-                    }
-                    
-                    // Reset split when orientation changes
-                    resetSplitBtn.click();
-                }
-            }
-            
-            // Initial orientation setup
-            handleOrientationChange();
-            
-            // Listen for orientation changes
-            window.addEventListener('resize', handleOrientationChange);
-            window.addEventListener('orientationchange', handleOrientationChange);
-            
-            // Toggle control menu
-            menuToggle.addEventListener('click', function() {
-                controlMenu.classList.toggle('hidden');
-            });
-            
-            // Load URL from input to iframe
-            function setupUrlInput(input, iframe) {
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        let url = input.value.trim();
-                        if (!url.startsWith('http')) {
-                            url = 'https://' + url;
-                            input.value = url;
-                        }
-                        iframe.src = url;
-                    }
-                });
-            }
-            
-            setupUrlInput(urlInput1, frame1);
-            setupUrlInput(urlInput2, frame2);
-            
-            // Clear URL input
-            clearBtn1.addEventListener('click', function() {
-                urlInput1.value = '';
-                frame1.src = 'about:blank';
-            });
-            
-            clearBtn2.addEventListener('click', function() {
-                urlInput2.value = '';
-                frame2.src = 'about:blank';
-            });
-            
-            // Full screen for frame 1
-            fullFrame1Btn.addEventListener('click', function() {
-                frame1.classList.add('frame-full');
-                frame2.classList.add('hidden-frame');
-                verticalDivider.style.display = 'none';
-                horizontalDivider.style.display = 'none';
-                controlMenu.classList.add('hidden');
-            });
-            
-            // Full screen for frame 2
-            fullFrame2Btn.addEventListener('click', function() {
-                frame2.classList.add('frame-full');
-                frame1.classList.add('hidden-frame');
-                verticalDivider.style.display = 'none';
-                horizontalDivider.style.display = 'none';
-                controlMenu.classList.add('hidden');
-            });
-            
-            // Reset split view
-            resetSplitBtn.addEventListener('click', function() {
-                frame1.classList.remove('frame-full', 'hidden-frame');
-                frame2.classList.remove('frame-full', 'hidden-frame');
-                
-                if (currentLayout === 'vertical') {
-                    verticalDivider.style.display = 'block';
-                    horizontalDivider.style.display = 'none';
-                    framesContainer.style.flexDirection = 'row';
-                    verticalDivider.style.left = '50%';
-                    frameWrappers[0].style.flex = '1';
-                    frameWrappers[1].style.flex = '1';
-                } else {
-                    verticalDivider.style.display = 'none';
-                    horizontalDivider.style.display = 'block';
-                    framesContainer.style.flexDirection = 'column';
-                    horizontalDivider.style.top = '50%';
-                    frameWrappers[0].style.flex = '1';
-                    frameWrappers[1].style.flex = '1';
-                }
-                
-                controlMenu.classList.remove('hidden');
-            });
-            
-            // Swap frames
-            swapFramesBtn.addEventListener('click', function() {
-                const tempSrc = frame1.src;
-                const tempInput = urlInput1.value;
-                
-                frame1.src = frame2.src;
-                frame2.src = tempSrc;
-                
-                urlInput1.value = urlInput2.value;
-                urlInput2.value = tempInput;
-            });
-            
-            // Vertical layout
-            verticalLayoutBtn.addEventListener('click', function() {
-                framesContainer.style.flexDirection = 'row';
-                verticalDivider.style.display = 'block';
-                horizontalDivider.style.display = 'none';
-                currentLayout = 'vertical';
-                resetSplitBtn.click();
-            });
-            
-            // Horizontal layout
-            horizontalLayoutBtn.addEventListener('click', function() {
-                framesContainer.style.flexDirection = 'column';
-                verticalDivider.style.display = 'none';
-                horizontalDivider.style.display = 'block';
-                currentLayout = 'horizontal';
-                resetSplitBtn.click();
-            });
-            
-            // Center top divider
-            centerTopBtn.addEventListener('click', function() {
-                if (currentLayout === 'horizontal') {
-                    horizontalDivider.style.top = '25%';
-                    frameWrappers[0].style.flex = '0 0 25%';
-                    frameWrappers[1].style.flex = '0 0 75%';
-                }
-            });
-            
-            // Center left divider
-            centerLeftBtn.addEventListener('click', function() {
-                if (currentLayout === 'vertical') {
-                    verticalDivider.style.left = '25%';
-                    frameWrappers[0].style.flex = '0 0 25%';
-                    frameWrappers[1].style.flex = '0 0 75%';
-                }
-            });
-            
-            // Divider drag events for vertical layout
-            verticalDivider.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                document.body.style.cursor = 'col-resize';
-                document.addEventListener('mousemove', handleVerticalDrag);
-                document.addEventListener('mouseup', stopDrag);
-            });
-            
-            function handleVerticalDrag(e) {
-                if (!isDragging) return;
-                
-                const containerRect = framesContainer.getBoundingClientRect();
-                const x = e.clientX - containerRect.left;
-                const percent = (x / containerRect.width) * 100;
-                
-                if (percent > 10 && percent < 90) {
-                    verticalDivider.style.left = `${percent}%`;
-                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
-                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
-                }
-            }
-            
-            // Divider drag events for horizontal layout
-            horizontalDivider.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                document.body.style.cursor = 'row-resize';
-                document.addEventListener('mousemove', handleHorizontalDrag);
-                document.addEventListener('mouseup', stopDrag);
-            });
-            
-            function handleHorizontalDrag(e) {
-                if (!isDragging) return;
-                
-                const containerRect = framesContainer.getBoundingClientRect();
-                const y = e.clientY - containerRect.top;
-                const percent = (y / containerRect.height) * 100;
-                
-                if (percent > 10 && percent < 90) {
-                    horizontalDivider.style.top = `${percent}%`;
-                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
-                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
-                }
-            }
-            
-            function stopDrag() {
-                isDragging = false;
-                document.body.style.cursor = 'default';
-                document.removeEventListener('mousemove', handleVerticalDrag);
-                document.removeEventListener('mousemove', handleHorizontalDrag);
-            }
-            
-            // Handle links inside iframes to open in the same frame
-            function handleFrameLinks(frame) {
-                try {
-                    const frameDoc = frame.contentDocument || frame.contentWindow.document;
-                    const links = frameDoc.getElementsByTagName('a');
-                    
-                    for (let i = 0; i < links.length; i++) {
-                        links[i].addEventListener('click', function(e) {
-                            e.preventDefault();
-                            frame.src = this.href;
-                        });
-                    }
-                } catch (e) {
-                    // Cross-origin restrictions, ignore
-                }
-            }
-            
-            // Periodically check for links in frames
-            setInterval(function() {
-                handleFrameLinks(frame1);
-                handleFrameLinks(frame2);
-            }, 3000);
-            
-            // Handle touch events for mobile
-            verticalDivider.addEventListener('touchstart', function(e) {
-                isDragging = true;
-                document.addEventListener('touchmove', handleVerticalTouch);
-                document.addEventListener('touchend', stopTouchDrag);
-            });
-            
-            horizontalDivider.addEventListener('touchstart', function(e) {
-                isDragging = true;
-                document.addEventListener('touchmove', handleHorizontalTouch);
-                document.addEventListener('touchend', stopTouchDrag);
-            });
-            
-            function handleVerticalTouch(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                const containerRect = framesContainer.getBoundingClientRect();
-                const x = e.touches[0].clientX - containerRect.left;
-                const percent = (x / containerRect.width) * 100;
-                
-                if (percent > 10 && percent < 90) {
-                    verticalDivider.style.left = `${percent}%`;
-                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
-                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
-                }
-            }
-            
-            function handleHorizontalTouch(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                const containerRect = framesContainer.getBoundingClientRect();
-                const y = e.touches[0].clientY - containerRect.top;
-                const percent = (y / containerRect.height) * 100;
-                
-                if (percent > 10 && percent < 90) {
-                    horizontalDivider.style.top = `${percent}%`;
-                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
-                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
-                }
-            }
-            
-            function stopTouchDrag() {
-                isDragging = false;
-                document.removeEventListener('touchmove', handleVerticalTouch);
-                document.removeEventListener('touchmove', handleHorizontalTouch);
-            }
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!controlMenu.classList.contains('hidden') && 
-                    !controlMenu.contains(e.target) && 
-                    !menuToggle.contains(e.target)) {
-                    controlMenu.classList.add('hidden');
-                }
-            });
-        });
-    </script>
+  <div class="menu-toggle" id="menuToggle">
+    <span>⋮</span>
+  </div>
+
+  <div class="split" id="splitArea">
+    <div class="pane" id="leftPane">
+      <iframe id="leftFrame" sandbox="allow-forms allow-scripts" src="about:blank"></iframe>
+    </div>
+    <div class="pane" id="rightPane">
+      <iframe id="rightFrame" sandbox="allow-forms allow-scripts" src="about:blank"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById('urlInput');
+  const left = document.getElementById('leftFrame');
+  const right = document.getElementById('rightFrame');
+  const loadLeft = document.getElementById('loadLeft');
+  const loadRight = document.getElementById('loadRight');
+  const loadBoth = document.getElementById('loadBoth');
+  const clearBoth = document.getElementById('clearBoth');
+  const full1 = document.getElementById('full1');
+  const full2 = document.getElementById('full2');
+  const leftPane = document.getElementById('leftPane');
+  const rightPane = document.getElementById('rightPane');
+  const menu = document.getElementById('menuBar');
+  const toggle = document.getElementById('menuToggle');
+
+  function normalizeUrl(u){
+    if(!u) return '';
+    if(!/^https?:\/\//i.test(u)){
+      return 'https://' + u;
+    }
+    return u;
+  }
+
+  function setFrameSrc(frame, url){
+    if(!url){
+      frame.removeAttribute('src');
+      return;
+    }
+    frame.src = url;
+  }
+
+  loadLeft.onclick = ()=> setFrameSrc(left, normalizeUrl(input.value.trim()));
+  loadRight.onclick = ()=> setFrameSrc(right, normalizeUrl(input.value.trim()));
+  loadBoth.onclick = ()=>{
+    const url = normalizeUrl(input.value.trim());
+    setFrameSrc(left,url); setFrameSrc(right,url);
+  };
+  clearBoth.onclick = ()=>{
+    input.value='';
+    leftPane.style.display = rightPane.style.display = 'flex';
+    setFrameSrc(left,''); setFrameSrc(right,'');
+  };
+
+  full1.onclick = ()=>{
+    leftPane.style.display='flex';
+    rightPane.style.display='none';
+  };
+  full2.onclick = ()=>{
+    leftPane.style.display='none';
+    rightPane.style.display='flex';
+  };
+
+  // Enter = mở cả 2 frame
+  input.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const url = normalizeUrl(input.value.trim());
+      setFrameSrc(left,url);
+      setFrameSrc(right,url);
+      menu.classList.remove('show');
+    }
+  });
+
+  // toggle menu + focus input
+  toggle.onclick = ()=>{
+    menu.classList.toggle('show');
+    if(menu.classList.contains('show')){
+      setTimeout(()=> input.focus(), 100);
+    }
+  };
+
+  // click ra ngoài -> ẩn menu
+  document.addEventListener('click', e=>{
+    if(!menu.contains(e.target) && !toggle.contains(e.target)){
+      menu.classList.remove('show');
+    }
+  });
+
+  document.addEventListener('gesturestart', e=>e.preventDefault());
+})();
+</script>
 </body>
 </html>
