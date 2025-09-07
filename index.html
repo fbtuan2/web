@@ -1,322 +1,733 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8" />
-<title>Split Web Viewer — 1 file</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#0b0f14" />
-
-<style>
-  :root{
-    --bg:#0b0f14;
-    --fg:#e9eef4;
-    --muted:#aab3bd;
-    --accent:#3ea6ff;
-    --panel:#121922cc;
-    --glass:#0b0f14cc;
-    --btn:#1b2733;
-    --btn-hover:#233343;
-    --radius:12px;
-    --gap:10px;
-    --split:50; /* phần trăm khung 1 */
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
-  }
-
-  *{box-sizing:border-box}
-  html,body{
-    margin:0; height:100%; background:var(--bg); color:var(--fg);
-    overscroll-behavior:none; -webkit-touch-callout:none;
-  }
-  body{
-    height:100dvh; /* iOS Safari modern */
-    font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  }
-
-  /* Khung chia */
-  .stage{
-    position:fixed; inset:0;
-    padding-top:calc(var(--safe-top));
-    padding-right:calc(var(--safe-right));
-    padding-bottom:calc(var(--safe-bottom));
-    padding-left:calc(var(--safe-left));
-    display:grid;
-    gap:var(--gap);
-    background:linear-gradient(180deg,#0b0f14,#0b0f14 60%, #0b0f14);
-  }
-  /* Portrait: trên / dưới */
-  .stage.is-portrait{
-    grid-template-rows: minmax(0, calc(var(--split)*1%)) minmax(0, calc((100 - var(--split))*1%));
-    grid-template-columns: 1fr;
-  }
-  /* Landscape: trái / phải */
-  .stage.is-landscape{
-    grid-template-columns: minmax(0, calc(var(--split)*1%)) minmax(0, calc((100 - var(--split))*1%));
-    grid-template-rows: 1fr;
-  }
-
-  iframe.viewer{
-    width:100%; height:100%; border:0; border-radius:var(--radius);
-    background:#0f1620;
-    box-shadow:0 0 0 1px #1a2735 inset;
-  }
-  /* Hạn chế mở tab mới: không cấp allow-popups */
-  iframe.viewer[sandbox]{}
-
-  /* Nút chia (thay thanh kéo) */
-  .split-btn{
-    position:fixed;
-    z-index:20;
-    display:flex; align-items:center; justify-content:center;
-    width:42px; height:42px;
-    border-radius:999px; border:1px solid #2a3949;
-    background:var(--btn);
-    box-shadow:0 10px 25px #0008, 0 0 0 1px #0005 inset;
-    cursor:pointer; user-select:none; -webkit-user-select:none;
-    touch-action:manipulation;
-  }
-  .split-btn:hover{ background:var(--btn-hover) }
-  .split-btn .dot{
-    width:6px; height:6px; border-radius:999px; margin:2px; background:var(--fg); opacity:.9;
-  }
-
-  /* Vị trí nút chia theo xoay */
-  .stage.is-portrait + .split-btn{
-    left:50%; transform:translate(-50%, 0);
-    top:calc( max(6px, var(--safe-top)) + 6px );
-  }
-  .stage.is-landscape + .split-btn{
-    top:50%; transform:translate(0, -50%);
-    left:calc( max(6px, var(--safe-left)) + 6px );
-  }
-
-  /* Menu nổi */
-  .fab{
-    position:fixed; right:calc(12px + var(--safe-right)); bottom:calc(12px + var(--safe-bottom));
-    z-index:30;
-  }
-  .fab > button{
-    padding:10px 14px; border-radius:999px; border:1px solid #2a3949;
-    background:var(--accent); color:#001525; font-weight:700;
-    cursor:pointer; box-shadow:0 10px 25px #0008;
-  }
-
-  .panel-wrap{
-    position:fixed; inset:0; z-index:25; display:none;
-    backdrop-filter: blur(6px);
-    background: radial-gradient(1200px 800px at 80% 120%, #1b273388 0%, transparent 60%);
-  }
-  .panel-wrap.show{ display:block; }
-  .panel{
-    position:fixed; right:calc(12px + var(--safe-right)); bottom:calc(64px + var(--safe-bottom));
-    width:min(92vw, 420px);
-    background:var(--panel); color:var(--fg);
-    border:1px solid #2a3949; border-radius:16px;
-    padding:12px; box-shadow:0 10px 30px #000a;
-  }
-  .panel h3{ margin:6px 6px 10px; font-size:14px; color:var(--muted); font-weight:600; }
-  .row{ display:flex; gap:8px; margin:8px 0; }
-  .row .grow{ flex:1; }
-  input[type="url"]{
-    width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a3949;
-    background:#0c131b; color:var(--fg);
-  }
-  .btn{
-    padding:10px 12px; border-radius:10px; border:1px solid #2a3949;
-    background:var(--btn); color:var(--fg); cursor:pointer;
-  }
-  .btn:hover{ background:var(--btn-hover); }
-  .btn.accent{ background:var(--accent); color:#001525; font-weight:700; border-color:transparent; }
-  .hint{ color:var(--muted); font-size:12px; margin:6px; }
-
-  /* Trạng thái Full Frame */
-  .full-1 .f2{ display:none !important; }
-  .full-1.stage.is-portrait{ grid-template-rows: 1fr 0 }
-  .full-1.stage.is-landscape{ grid-template-columns: 1fr 0 }
-
-  .full-2 .f1{ display:none !important; }
-  .full-2.stage.is-portrait{ grid-template-rows: 0 1fr }
-  .full-2.stage.is-landscape{ grid-template-columns: 0 1fr }
-
-  /* Cuộn trong panel mượt hơn trên iOS */
-  .panel{ -webkit-overflow-scrolling:touch; max-height: 70dvh; overflow:auto; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Dual Frame Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .frames-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .vertical-divider {
+            position: absolute;
+            width: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: col-resize;
+            z-index: 10;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            transform: translateX(-50%);
+            transition: background 0.3s;
+        }
+        
+        .horizontal-divider {
+            position: absolute;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: row-resize;
+            z-index: 10;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            transition: background 0.3s;
+            display: none;
+        }
+        
+        .vertical-divider:hover, .horizontal-divider:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .frame-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+        
+        .frame-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            z-index: 5;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .control-menu {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, opacity 0.3s;
+            width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .control-menu.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .menu-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 101;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+        
+        .menu-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        .url-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            outline: none;
+        }
+        
+        .url-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            min-width: 45px;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .btn i {
+            margin-right: 5px;
+        }
+        
+        .layout-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .orientation-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #fdbb2d;
+        }
+        
+        .frame-full {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 50;
+        }
+        
+        .hidden-frame {
+            display: none;
+        }
+        
+        /* Landscape mode for mobile */
+        @media (max-width: 768px) and (orientation: landscape) {
+            body {
+                padding: 0;
+            }
+            
+            .frames-container {
+                flex-direction: row;
+                height: 100vh;
+                width: 100vw;
+            }
+            
+            .vertical-divider {
+                display: block;
+                height: 100%;
+            }
+            
+            .horizontal-divider {
+                display: none;
+            }
+            
+            .control-menu {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                max-height: 70vh;
+            }
+            
+            .layout-controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .orientation-controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .btn {
+                padding: 12px;
+            }
+            
+            .btn span {
+                display: none;
+            }
+            
+            .btn i {
+                margin-right: 0;
+                font-size: 16px;
+            }
+            
+            .menu-toggle {
+                bottom: 10px;
+                right: 10px;
+                width: 50px;
+                height: 50px;
+            }
+        }
+        
+        @media (max-width: 768px) and (orientation: portrait) {
+            .frames-container {
+                flex-direction: column;
+            }
+            
+            .vertical-divider {
+                display: none;
+            }
+            
+            .horizontal-divider {
+                display: block;
+            }
+            
+            .control-menu {
+                bottom: 80px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+            }
+            
+            .layout-controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .orientation-controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .btn {
+                padding: 12px;
+            }
+            
+            .btn span {
+                display: none;
+            }
+            
+            .btn i {
+                margin-right: 0;
+            }
+        }
+        
+        /* Custom scrollbar for control menu */
+        .control-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .control-menu::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .control-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .control-menu::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Notch area optimization */
+        .notch-spacer {
+            display: none;
+        }
+        
+        @supports(padding: max(0px)) {
+            .container {
+                padding-left: max(env(safe-area-inset-left), 10px);
+                padding-right: max(env(safe-area-inset-right), 10px);
+                padding-top: max(env(safe-area-inset-top), 10px);
+                padding-bottom: max(env(safe-area-inset-bottom), 10px);
+            }
+        }
+    </style>
 </head>
 <body>
-
-  <!-- Khung chia -->
-  <div id="stage" class="stage">
-    <iframe id="frame1" class="viewer f1" title="Frame 1" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
-    <iframe id="frame2" class="viewer f2" title="Frame 2" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
-  </div>
-
-  <!-- Nút chia (đặt sau .stage để dùng selector anh em + định vị) -->
-  <button id="splitBtn" class="split-btn" aria-label="Điều chỉnh tỉ lệ">
-    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-  </button>
-
-  <!-- FAB mở menu -->
-  <div class="fab">
-    <button id="openMenu" aria-haspopup="dialog">Menu</button>
-  </div>
-
-  <!-- Panel menu -->
-  <div id="panelWrap" class="panel-wrap" aria-hidden="true">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Bảng điều khiển">
-      <h3>Liên kết & điều khiển</h3>
-
-      <div class="row">
-        <input id="url1" class="grow" type="url" placeholder="Link cho Frame 1 (https://…)" />
-        <button class="btn" id="load1">Tải</button>
-        <button class="btn" id="clear1" title="Xoá link 1">Xoá</button>
-      </div>
-      <div class="row">
-        <input id="url2" class="grow" type="url" placeholder="Link cho Frame 2 (https://…)" />
-        <button class="btn" id="load2">Tải</button>
-        <button class="btn" id="clear2" title="Xoá link 2">Xoá</button>
-      </div>
-
-      <div class="row">
-        <button class="btn" id="full1">Full Frame 1</button>
-        <button class="btn" id="full2">Full Frame 2</button>
-        <button class="btn" id="split50">Chia đôi</button>
-      </div>
-
-      <div class="row">
-        <button class="btn accent" id="closeMenu">Đóng</button>
-      </div>
-
-      <div class="hint">Gợi ý: Nhập link rồi bấm <b>Tải</b>. Nút <b>Chia đôi</b> đưa về 50/50. Nút chia ở giữa để đảo tỉ lệ 30/70 ↔ 70/30.</div>
-      <div class="hint">Ghi chú: Iframe ở chế độ sandbox để <b>không bật tab mới</b> khi trang cố mở pop-up.</div>
+    <div class="container">
+        <div class="frames-container">
+            <div class="frame-wrapper">
+                <div class="frame-title">Frame 1</div>
+                <iframe id="frame1" src="https://example.com" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+            </div>
+            
+            <div class="vertical-divider" id="verticalDivider"></div>
+            <div class="horizontal-divider" id="horizontalDivider"></div>
+            
+            <div class="frame-wrapper">
+                <div class="frame-title">Frame 2</div>
+                <iframe id="frame2" src="https://wikipedia.org" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+            </div>
+        </div>
     </div>
-  </div>
+    
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <div class="control-menu" id="controlMenu">
+        <div class="url-section">
+            <div class="section-title">URL Frame 1</div>
+            <div class="url-input-group">
+                <input type="text" class="url-input" id="urlInput1" placeholder="Nhập URL cho frame 1" value="https://example.com">
+                <button class="btn clear-btn" id="clearBtn1"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="section-title">URL Frame 2</div>
+            <div class="url-input-group">
+                <input type="text" class="url-input" id="urlInput2" placeholder="Nhập URL cho frame 2" value="https://wikipedia.org">
+                <button class="btn clear-btn" id="clearBtn2"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        
+        <div class="section-title">Chế độ hiển thị</div>
+        <div class="layout-controls">
+            <button class="btn" id="fullFrame1"><i class="fas fa-expand"></i> <span>Full 1</span></button>
+            <button class="btn" id="fullFrame2"><i class="fas fa-expand"></i> <span>Full 2</span></button>
+            <button class="btn" id="resetSplit"><i class="fas fa-columns"></i> <span>Chia đôi</span></button>
+            <button class="btn" id="swapFrames"><i class="fas fa-exchange-alt"></i> <span>Đổi chỗ</span></button>
+        </div>
+        
+        <div class="section-title">Bố cục</div>
+        <div class="orientation-controls">
+            <button class="btn" id="verticalLayout"><i class="fas fa-arrows-alt-h"></i> <span>Dọc</span></button>
+            <button class="btn" id="horizontalLayout"><i class="fas fa-arrows-alt-v"></i> <span>Ngang</span></button>
+            <button class="btn" id="centerTop"><i class="fas fa-arrow-down"></i> <span>Trên</span></button>
+            <button class="btn" id="centerLeft"><i class="fas fa-arrow-right"></i> <span>Trái</span></button>
+        </div>
+    </div>
 
-<script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const stage = $('#stage');
-  const f1 = $('#frame1'), f2 = $('#frame2');
-  const splitBtn = $('#splitBtn');
-
-  const panelWrap = $('#panelWrap');
-  const openMenu = $('#openMenu');
-  const closeMenu = $('#closeMenu');
-
-  const url1 = $('#url1'), url2 = $('#url2');
-  const load1 = $('#load1'), load2 = $('#load2');
-  const clear1 = $('#clear1'), clear2 = $('#clear2');
-
-  const full1 = $('#full1'), full2 = $('#full2'), split50 = $('#split50');
-
-  /* ----------------- Hỗ trợ xoay & tai thỏ iOS ----------------- */
-  const setOrientationClass = () => {
-    const portrait = window.matchMedia("(orientation: portrait)").matches;
-    stage.classList.toggle('is-portrait', portrait);
-    stage.classList.toggle('is-landscape', !portrait);
-  };
-  setOrientationClass();
-  window.addEventListener('orientationchange', setOrientationClass);
-  window.addEventListener('resize', setOrientationClass);
-
-  /* ----------------- Helper split ----------------- */
-  const getSplit = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--split')) || 50;
-  const setSplit = (pct) => {
-    const clamped = Math.min(100, Math.max(0, pct));
-    document.documentElement.style.setProperty('--split', clamped);
-  };
-
-  /* Nút chia: đảo 30/70 ↔ 70/30 (giữ nhanh gọn theo yêu cầu “nút”) */
-  const toggleSplit = () => {
-    const s = getSplit();
-    if (Math.abs(s - 50) < 1) {
-      setSplit(70); // nếu đang 50/50, chuyển 70/30
-    } else if (s > 50) {
-      setSplit(30); // 70 → 30
-    } else {
-      setSplit(70); // 30 → 70
-    }
-    // Bỏ trạng thái full nếu đang bật
-    document.body.classList.remove('full-1','full-2');
-  };
-
-  splitBtn.addEventListener('click', toggleSplit);
-
-  /* ----------------- Menu nổi ----------------- */
-  const openPanel = () => {
-    panelWrap.classList.add('show');
-    panelWrap.setAttribute('aria-hidden','false');
-  };
-  const closePanel = () => {
-    panelWrap.classList.remove('show');
-    panelWrap.setAttribute('aria-hidden','true');
-  };
-  openMenu.addEventListener('click', openPanel);
-  closeMenu.addEventListener('click', closePanel);
-  panelWrap.addEventListener('click', (e)=>{
-    if(e.target === panelWrap) closePanel();
-  });
-
-  /* ----------------- Điều khiển link ----------------- */
-  const normalizeUrl = (v) => {
-    v = (v || '').trim();
-    if(!v) return '';
-    if(/^https?:\/\//i.test(v)) return v;
-    return 'https://' + v;
-  };
-
-  load1.addEventListener('click', ()=>{
-    const u = normalizeUrl(url1.value);
-    if(u){ f1.src = u; }
-  });
-  load2.addEventListener('click', ()=>{
-    const u = normalizeUrl(url2.value);
-    if(u){ f2.src = u; }
-  });
-
-  clear1.addEventListener('click', ()=>{
-    url1.value = '';
-    f1.removeAttribute('src');
-  });
-  clear2.addEventListener('click', ()=>{
-    url2.value = '';
-    f2.removeAttribute('src');
-  });
-
-  /* ----------------- Full / Split ----------------- */
-  full1.addEventListener('click', ()=>{
-    document.body.classList.add('full-1');
-    document.body.classList.remove('full-2');
-  });
-  full2.addEventListener('click', ()=>{
-    document.body.classList.add('full-2');
-    document.body.classList.remove('full-1');
-  });
-  split50.addEventListener('click', ()=>{
-    document.body.classList.remove('full-1','full-2');
-    setSplit(50);
-  });
-
-  /* Khởi tạo tỉ lệ mặc định */
-  setSplit(50);
-
-  /* ----------------- Chặn kéo-zoom làm lệch layout trên iOS ----------------- */
-  document.addEventListener('gesturestart', (e)=> e.preventDefault());
-  // Ngăn double-tap zoom:
-  let lastTouch = 0;
-  document.addEventListener('touchend', (e)=>{
-    const now = Date.now();
-    if(now - lastTouch <= 300){ e.preventDefault(); }
-    lastTouch = now;
-  }, {passive:false});
-
-  /* Gợi ý trang mẫu để test nhanh (không bắt buộc) */
-  url1.placeholder = "vd: https://news.ycombinator.com";
-  url2.placeholder = "vd: https://developer.mozilla.org";
-})();
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const frame1 = document.getElementById('frame1');
+            const frame2 = document.getElementById('frame2');
+            const frameWrappers = document.querySelectorAll('.frame-wrapper');
+            const verticalDivider = document.getElementById('verticalDivider');
+            const horizontalDivider = document.getElementById('horizontalDivider');
+            const urlInput1 = document.getElementById('urlInput1');
+            const urlInput2 = document.getElementById('urlInput2');
+            const clearBtn1 = document.getElementById('clearBtn1');
+            const clearBtn2 = document.getElementById('clearBtn2');
+            const menuToggle = document.getElementById('menuToggle');
+            const controlMenu = document.getElementById('controlMenu');
+            const fullFrame1Btn = document.getElementById('fullFrame1');
+            const fullFrame2Btn = document.getElementById('fullFrame2');
+            const resetSplitBtn = document.getElementById('resetSplit');
+            const swapFramesBtn = document.getElementById('swapFrames');
+            const verticalLayoutBtn = document.getElementById('verticalLayout');
+            const horizontalLayoutBtn = document.getElementById('horizontalLayout');
+            const centerTopBtn = document.getElementById('centerTop');
+            const centerLeftBtn = document.getElementById('centerLeft');
+            const framesContainer = document.querySelector('.frames-container');
+            
+            // Variables
+            let isDragging = false;
+            let currentLayout = 'vertical'; // 'vertical' or 'horizontal'
+            
+            // Detect orientation change
+            function handleOrientationChange() {
+                if (window.innerWidth <= 768) {
+                    if (window.matchMedia("(orientation: landscape)").matches) {
+                        // Landscape mode
+                        framesContainer.style.flexDirection = 'row';
+                        verticalDivider.style.display = 'block';
+                        horizontalDivider.style.display = 'none';
+                        currentLayout = 'vertical';
+                        
+                        // Adjust for notch areas
+                        document.body.style.paddingLeft = 'env(safe-area-inset-left)';
+                        document.body.style.paddingRight = 'env(safe-area-inset-right)';
+                    } else {
+                        // Portrait mode
+                        framesContainer.style.flexDirection = 'column';
+                        verticalDivider.style.display = 'none';
+                        horizontalDivider.style.display = 'block';
+                        currentLayout = 'horizontal';
+                        
+                        // Reset padding for portrait
+                        document.body.style.paddingLeft = '0';
+                        document.body.style.paddingRight = '0';
+                    }
+                    
+                    // Reset split when orientation changes
+                    resetSplitBtn.click();
+                }
+            }
+            
+            // Initial orientation setup
+            handleOrientationChange();
+            
+            // Listen for orientation changes
+            window.addEventListener('resize', handleOrientationChange);
+            window.addEventListener('orientationchange', handleOrientationChange);
+            
+            // Toggle control menu
+            menuToggle.addEventListener('click', function() {
+                controlMenu.classList.toggle('hidden');
+            });
+            
+            // Load URL from input to iframe
+            function setupUrlInput(input, iframe) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        let url = input.value.trim();
+                        if (!url.startsWith('http')) {
+                            url = 'https://' + url;
+                            input.value = url;
+                        }
+                        iframe.src = url;
+                    }
+                });
+            }
+            
+            setupUrlInput(urlInput1, frame1);
+            setupUrlInput(urlInput2, frame2);
+            
+            // Clear URL input
+            clearBtn1.addEventListener('click', function() {
+                urlInput1.value = '';
+                frame1.src = 'about:blank';
+            });
+            
+            clearBtn2.addEventListener('click', function() {
+                urlInput2.value = '';
+                frame2.src = 'about:blank';
+            });
+            
+            // Full screen for frame 1
+            fullFrame1Btn.addEventListener('click', function() {
+                frame1.classList.add('frame-full');
+                frame2.classList.add('hidden-frame');
+                verticalDivider.style.display = 'none';
+                horizontalDivider.style.display = 'none';
+                controlMenu.classList.add('hidden');
+            });
+            
+            // Full screen for frame 2
+            fullFrame2Btn.addEventListener('click', function() {
+                frame2.classList.add('frame-full');
+                frame1.classList.add('hidden-frame');
+                verticalDivider.style.display = 'none';
+                horizontalDivider.style.display = 'none';
+                controlMenu.classList.add('hidden');
+            });
+            
+            // Reset split view
+            resetSplitBtn.addEventListener('click', function() {
+                frame1.classList.remove('frame-full', 'hidden-frame');
+                frame2.classList.remove('frame-full', 'hidden-frame');
+                
+                if (currentLayout === 'vertical') {
+                    verticalDivider.style.display = 'block';
+                    horizontalDivider.style.display = 'none';
+                    framesContainer.style.flexDirection = 'row';
+                    verticalDivider.style.left = '50%';
+                    frameWrappers[0].style.flex = '1';
+                    frameWrappers[1].style.flex = '1';
+                } else {
+                    verticalDivider.style.display = 'none';
+                    horizontalDivider.style.display = 'block';
+                    framesContainer.style.flexDirection = 'column';
+                    horizontalDivider.style.top = '50%';
+                    frameWrappers[0].style.flex = '1';
+                    frameWrappers[1].style.flex = '1';
+                }
+                
+                controlMenu.classList.remove('hidden');
+            });
+            
+            // Swap frames
+            swapFramesBtn.addEventListener('click', function() {
+                const tempSrc = frame1.src;
+                const tempInput = urlInput1.value;
+                
+                frame1.src = frame2.src;
+                frame2.src = tempSrc;
+                
+                urlInput1.value = urlInput2.value;
+                urlInput2.value = tempInput;
+            });
+            
+            // Vertical layout
+            verticalLayoutBtn.addEventListener('click', function() {
+                framesContainer.style.flexDirection = 'row';
+                verticalDivider.style.display = 'block';
+                horizontalDivider.style.display = 'none';
+                currentLayout = 'vertical';
+                resetSplitBtn.click();
+            });
+            
+            // Horizontal layout
+            horizontalLayoutBtn.addEventListener('click', function() {
+                framesContainer.style.flexDirection = 'column';
+                verticalDivider.style.display = 'none';
+                horizontalDivider.style.display = 'block';
+                currentLayout = 'horizontal';
+                resetSplitBtn.click();
+            });
+            
+            // Center top divider
+            centerTopBtn.addEventListener('click', function() {
+                if (currentLayout === 'horizontal') {
+                    horizontalDivider.style.top = '25%';
+                    frameWrappers[0].style.flex = '0 0 25%';
+                    frameWrappers[1].style.flex = '0 0 75%';
+                }
+            });
+            
+            // Center left divider
+            centerLeftBtn.addEventListener('click', function() {
+                if (currentLayout === 'vertical') {
+                    verticalDivider.style.left = '25%';
+                    frameWrappers[0].style.flex = '0 0 25%';
+                    frameWrappers[1].style.flex = '0 0 75%';
+                }
+            });
+            
+            // Divider drag events for vertical layout
+            verticalDivider.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                document.body.style.cursor = 'col-resize';
+                document.addEventListener('mousemove', handleVerticalDrag);
+                document.addEventListener('mouseup', stopDrag);
+            });
+            
+            function handleVerticalDrag(e) {
+                if (!isDragging) return;
+                
+                const containerRect = framesContainer.getBoundingClientRect();
+                const x = e.clientX - containerRect.left;
+                const percent = (x / containerRect.width) * 100;
+                
+                if (percent > 10 && percent < 90) {
+                    verticalDivider.style.left = `${percent}%`;
+                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
+                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
+                }
+            }
+            
+            // Divider drag events for horizontal layout
+            horizontalDivider.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                document.body.style.cursor = 'row-resize';
+                document.addEventListener('mousemove', handleHorizontalDrag);
+                document.addEventListener('mouseup', stopDrag);
+            });
+            
+            function handleHorizontalDrag(e) {
+                if (!isDragging) return;
+                
+                const containerRect = framesContainer.getBoundingClientRect();
+                const y = e.clientY - containerRect.top;
+                const percent = (y / containerRect.height) * 100;
+                
+                if (percent > 10 && percent < 90) {
+                    horizontalDivider.style.top = `${percent}%`;
+                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
+                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
+                }
+            }
+            
+            function stopDrag() {
+                isDragging = false;
+                document.body.style.cursor = 'default';
+                document.removeEventListener('mousemove', handleVerticalDrag);
+                document.removeEventListener('mousemove', handleHorizontalDrag);
+            }
+            
+            // Handle links inside iframes to open in the same frame
+            function handleFrameLinks(frame) {
+                try {
+                    const frameDoc = frame.contentDocument || frame.contentWindow.document;
+                    const links = frameDoc.getElementsByTagName('a');
+                    
+                    for (let i = 0; i < links.length; i++) {
+                        links[i].addEventListener('click', function(e) {
+                            e.preventDefault();
+                            frame.src = this.href;
+                        });
+                    }
+                } catch (e) {
+                    // Cross-origin restrictions, ignore
+                }
+            }
+            
+            // Periodically check for links in frames
+            setInterval(function() {
+                handleFrameLinks(frame1);
+                handleFrameLinks(frame2);
+            }, 3000);
+            
+            // Handle touch events for mobile
+            verticalDivider.addEventListener('touchstart', function(e) {
+                isDragging = true;
+                document.addEventListener('touchmove', handleVerticalTouch);
+                document.addEventListener('touchend', stopTouchDrag);
+            });
+            
+            horizontalDivider.addEventListener('touchstart', function(e) {
+                isDragging = true;
+                document.addEventListener('touchmove', handleHorizontalTouch);
+                document.addEventListener('touchend', stopTouchDrag);
+            });
+            
+            function handleVerticalTouch(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const containerRect = framesContainer.getBoundingClientRect();
+                const x = e.touches[0].clientX - containerRect.left;
+                const percent = (x / containerRect.width) * 100;
+                
+                if (percent > 10 && percent < 90) {
+                    verticalDivider.style.left = `${percent}%`;
+                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
+                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
+                }
+            }
+            
+            function handleHorizontalTouch(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const containerRect = framesContainer.getBoundingClientRect();
+                const y = e.touches[0].clientY - containerRect.top;
+                const percent = (y / containerRect.height) * 100;
+                
+                if (percent > 10 && percent < 90) {
+                    horizontalDivider.style.top = `${percent}%`;
+                    frameWrappers[0].style.flex = `0 0 ${percent}%`;
+                    frameWrappers[1].style.flex = `0 0 ${100 - percent}%`;
+                }
+            }
+            
+            function stopTouchDrag() {
+                isDragging = false;
+                document.removeEventListener('touchmove', handleVerticalTouch);
+                document.removeEventListener('touchmove', handleHorizontalTouch);
+            }
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!controlMenu.classList.contains('hidden') && 
+                    !controlMenu.contains(e.target) && 
+                    !menuToggle.contains(e.target)) {
+                    controlMenu.classList.add('hidden');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
