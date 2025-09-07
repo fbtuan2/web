@@ -1,252 +1,421 @@
 <!DOCTYPE html>
+
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>Split Frames</title>
-<style>
-  :root{
-    --gap: 8px;
-    --menu-h: 52px;
-    --bg: linear-gradient(135deg,#0f172a,#0b3a67);
-    --accent: #7afcff;
-    --glass: rgba(20,20,40,0.5);
-    --radius: 12px;
-    --menu-transition: 0.35s cubic-bezier(0.4,0.0,0.2,1);
-  }
-  html,body{
-    height:100%;
-    margin:0;
-    background:var(--bg);
-    color:#e6f0ff;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-  }
-  .app{
-    height:100vh;
-    padding: calc(env(safe-area-inset-top)) calc(env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) calc(env(safe-area-inset-left));
-    box-sizing:border-box;
-    display:flex;
-    flex-direction:column;
-    gap:var(--gap);
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  /* menu */
-  .menu{
-    position:fixed;
-    top:env(safe-area-inset-top);
-    left:50%;
-    transform:translate(-50%,-150%);
-    opacity:0;
-    height:var(--menu-h);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:20;
-    transition:opacity var(--menu-transition), transform var(--menu-transition);
-  }
-  .menu.show{
-    transform:translate(-50%,0);
-    opacity:1;
-  }
-  .menu-inner{
-    background:var(--glass);
-    border-radius:calc(var(--menu-h)/1.5);
-    padding:6px 10px;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    backdrop-filter: blur(12px);
-    box-shadow:0 4px 20px rgba(0,0,0,0.4);
-  }
-  .menu input[type="url"]{
-    flex:1;
-    min-width:0;
-    height:32px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.15);
-    background:rgba(255,255,255,0.05);
-    padding:4px 8px;
-    color:inherit;
-    font-size:13px;
-    outline:none;
-  }
-  .menu button{
-    height:32px;
-    border:0;
-    padding:0 10px;
-    border-radius:8px;
-    background:rgba(255,255,255,0.1);
-    color:#fff;
-    font-size:12px;
-    cursor:pointer;
-    user-select:none;
-  }
+```
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+        height: 100vh;
+        height: 100dvh;
+        background: #000;
+        padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
 
-  /* toggle icon */
-  .menu-toggle{
-    position:fixed;
-    top:calc(env(safe-area-inset-top) + 10px);
-    right:calc(env(safe-area-inset-right) + 10px);
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    background:rgba(255,255,255,0.15);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    backdrop-filter:blur(10px);
-    z-index:30;
-    box-shadow:0 2px 8px rgba(0,0,0,0.4);
-  }
-  .menu-toggle span{
-    font-size:18px;
-    color:#fff;
-    line-height:1;
-  }
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        position: relative;
+    }
 
-  /* container frames */
-  .split{
-    flex:1;
-    display:flex;
-    gap:var(--gap);
-    max-width:100%;
-    align-items:stretch;
-    flex-direction:column; /* dọc */
-  }
-  @media (orientation: landscape){
-    .split{ flex-direction:row; } /* ngang */
-  }
+    .frame-container {
+        display: flex;
+        flex: 1;
+        transition: all 0.3s ease;
+    }
 
-  .pane{
-    flex:1;
-    border-radius:var(--radius);
-    overflow:hidden;
-    background:#071428;
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-    box-shadow:0 8px 40px rgba(2,6,23,0.6);
-  }
-  iframe{
-    flex:1;
-    width:100%;
-    height:100%;
-    border:0;
-    display:block;
-    background:white;
-  }
+    .frame-container.vertical {
+        flex-direction: column;
+    }
+
+    .frame-container.horizontal {
+        flex-direction: row;
+    }
+
+    .frame {
+        flex: 1;
+        border: none;
+        background: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .frame.hidden {
+        flex: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .frame.full {
+        flex: 1;
+    }
+
+    .menu-button {
+        position: fixed;
+        top: env(safe-area-inset-top, 10px);
+        right: env(safe-area-inset-right, 10px);
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .menu-button:hover {
+        background: rgba(0, 0, 0, 0.9);
+    }
+
+    .menu {
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 10px) + 54px);
+        right: env(safe-area-inset-right, 10px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 12px;
+        padding: 20px;
+        min-width: 280px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    }
+
+    .menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .menu-section {
+        margin-bottom: 20px;
+    }
+
+    .menu-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .menu-section h3 {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .menu input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .menu input:focus {
+        border-color: #007AFF;
+    }
+
+    .load-btn {
+        padding: 10px 16px;
+        background: #007AFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 0.3s;
+        white-space: nowrap;
+    }
+
+    .load-btn:hover {
+        background: #0056CC;
+    }
+
+    .control-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .control-btn {
+        padding: 12px;
+        background: #f5f5f5;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+        transition: background 0.3s;
+    }
+
+    .control-btn:hover {
+        background: #e0e0e0;
+    }
+
+    .control-btn.active {
+        background: #007AFF;
+        color: white;
+    }
+
+    .layout-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .layout-btn {
+        padding: 10px;
+        background: #f5f5f5;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background 0.3s;
+    }
+
+    .layout-btn:hover {
+        background: #e0e0e0;
+    }
+
+    .layout-btn.active {
+        background: #007AFF;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .menu {
+            right: env(safe-area-inset-right, 5px);
+            left: env(safe-area-inset-left, 5px);
+            width: auto;
+            min-width: auto;
+        }
+        
+        .menu-button {
+            top: calc(env(safe-area-inset-top, 0px) + 10px);
+            right: calc(env(safe-area-inset-right, 0px) + 10px);
+        }
+    }
+
+    /* iOS Safari specific */
+    @supports (-webkit-touch-callout: none) {
+        body {
+            height: -webkit-fill-available;
+        }
+        
+        .container {
+            height: -webkit-fill-available;
+        }
+    }
 </style>
+```
+
 </head>
 <body>
-<div class="app">
-  <div class="menu" id="menuBar">
-    <div class="menu-inner" id="menuInner">
-      <input id="urlInput" type="url" placeholder="Nhập URL..." />
-      <button id="loadLeft">←</button>
-      <button id="loadRight">→</button>
-      <button id="loadBoth">2</button>
-      <button id="clearBoth">X</button>
-      <button id="full1">F1</button>
-      <button id="full2">F2</button>
-    </div>
-  </div>
+    <div class="container">
+        <button class="menu-button" onclick="toggleMenu()">⋯</button>
 
-  <div class="menu-toggle" id="menuToggle">
-    <span>⋮</span>
-  </div>
+```
+    <div class="menu" id="menu">
+        <div class="menu-section">
+            <h3>Layout</h3>
+            <div class="layout-buttons">
+                <button class="layout-btn active" onclick="setLayout('vertical')">Dọc (Trên/Dưới)</button>
+                <button class="layout-btn" onclick="setLayout('horizontal')">Ngang (Trái/Phải)</button>
+            </div>
+        </div>
 
-  <div class="split" id="splitArea">
-    <div class="pane" id="leftPane">
-      <iframe id="leftFrame" sandbox="allow-forms allow-scripts" srcdoc="
-        <base target='_self'>
-        <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#9fd7ff}</style>
-        <div>Khung 1</div>"></iframe>
+        <div class="menu-section">
+            <h3>Frame 1</h3>
+            <div class="input-group">
+                <div class="input-row">
+                    <input type="url" id="url1" placeholder="Nhập link cho Frame 1..." value="https://www.google.com">
+                    <button class="load-btn" onclick="loadFrame(1)">Tải</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <h3>Frame 2</h3>
+            <div class="input-group">
+                <div class="input-row">
+                    <input type="url" id="url2" placeholder="Nhập link cho Frame 2..." value="https://www.youtube.com">
+                    <button class="load-btn" onclick="loadFrame(2)">Tải</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <h3>Điều khiển</h3>
+            <div class="control-buttons">
+                <button class="control-btn active" onclick="showBothFrames()">Hiện cả 2</button>
+                <button class="control-btn" onclick="showFrame(1)">Chỉ Frame 1</button>
+                <button class="control-btn" onclick="showFrame(2)">Chỉ Frame 2</button>
+                <button class="control-btn" onclick="reloadFrames()">Reload All</button>
+            </div>
+        </div>
     </div>
-    <div class="pane" id="rightPane">
-      <iframe id="rightFrame" sandbox="allow-forms allow-scripts" srcdoc="
-        <base target='_self'>
-        <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#ffdc9f}</style>
-        <div>Khung 2</div>"></iframe>
+
+    <div class="frame-container vertical" id="frameContainer">
+        <iframe class="frame" id="frame1" src="https://www.google.com"></iframe>
+        <iframe class="frame" id="frame2" src="https://www.youtube.com"></iframe>
     </div>
-  </div>
 </div>
 
 <script>
-(function(){
-  const input = document.getElementById('urlInput');
-  const left = document.getElementById('leftFrame');
-  const right = document.getElementById('rightFrame');
-  const loadLeft = document.getElementById('loadLeft');
-  const loadRight = document.getElementById('loadRight');
-  const loadBoth = document.getElementById('loadBoth');
-  const clearBoth = document.getElementById('clearBoth');
-  const full1 = document.getElementById('full1');
-  const full2 = document.getElementById('full2');
-  const leftPane = document.getElementById('leftPane');
-  const rightPane = document.getElementById('rightPane');
-  const menu = document.getElementById('menuBar');
-  const toggle = document.getElementById('menuToggle');
+    let currentLayout = 'vertical';
+    let currentView = 'both';
 
-  function normalizeUrl(u){
-    if(!u) return '';
-    try{
-      const maybe = new URL(u, window.location.href);
-      if(!maybe.protocol || maybe.protocol === ':'){
-        return 'https://' + u;
-      }
-      return maybe.href;
-    }catch(e){
-      return u.indexOf('://') === -1 ? 'https://' + u : u;
+    function toggleMenu() {
+        const menu = document.getElementById('menu');
+        menu.classList.toggle('show');
     }
-  }
 
-  function setFrameSrc(frame, url){
-    if(!url){
-      frame.removeAttribute('src');
-      frame.srcdoc = "<base target='_self'><style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#081226;color:#9fd7ff;font-family:system-ui}</style><div>Empty</div>";
-      return;
+    function setLayout(layout) {
+        const container = document.getElementById('frameContainer');
+        const buttons = document.querySelectorAll('.layout-btn');
+        
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        container.className = `frame-container ${layout}`;
+        currentLayout = layout;
     }
-    frame.src = url;
-  }
 
-  loadLeft.onclick = ()=> setFrameSrc(left, normalizeUrl(input.value.trim()));
-  loadRight.onclick = ()=> setFrameSrc(right, normalizeUrl(input.value.trim()));
-  loadBoth.onclick = ()=>{
-    const url = normalizeUrl(input.value.trim());
-    setFrameSrc(left,url); setFrameSrc(right,url);
-  };
-  clearBoth.onclick = ()=>{
-    input.value='';
-    setFrameSrc(left,''); setFrameSrc(right,'');
-    leftPane.style.display = rightPane.style.display = 'flex';
-  };
-
-  full1.onclick = ()=>{
-    leftPane.style.display='flex';
-    rightPane.style.display='none';
-  };
-  full2.onclick = ()=>{
-    leftPane.style.display='none';
-    rightPane.style.display='flex';
-  };
-
-  // toggle menu
-  toggle.onclick = ()=>{
-    menu.classList.toggle('show');
-  };
-
-  // click ngoài để ẩn menu
-  document.addEventListener('click', e=>{
-    if(!menu.contains(e.target) && !toggle.contains(e.target)){
-      menu.classList.remove('show');
+    function loadFrame(frameNum) {
+        const url = document.getElementById(`url${frameNum}`).value;
+        const frame = document.getElementById(`frame${frameNum}`);
+        
+        if (url) {
+            // Thêm https:// nếu không có protocol
+            let finalUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                finalUrl = 'https://' + url;
+            }
+            frame.src = finalUrl;
+        }
     }
-  });
 
-  document.addEventListener('gesturestart', e=>e.preventDefault());
-})();
+    function showBothFrames() {
+        const frame1 = document.getElementById('frame1');
+        const frame2 = document.getElementById('frame2');
+        const buttons = document.querySelectorAll('.control-btn');
+        
+        buttons.forEach(btn => btn.classList.remove('active'));
+        buttons[0].classList.add('active');
+        
+        frame1.classList.remove('hidden', 'full');
+        frame2.classList.remove('hidden', 'full');
+        currentView = 'both';
+    }
+
+    function showFrame(frameNum) {
+        const frame1 = document.getElementById('frame1');
+        const frame2 = document.getElementById('frame2');
+        const buttons = document.querySelectorAll('.control-btn');
+        
+        buttons.forEach(btn => btn.classList.remove('active'));
+        buttons[frameNum].classList.add('active');
+        
+        if (frameNum === 1) {
+            frame1.classList.remove('hidden');
+            frame1.classList.add('full');
+            frame2.classList.add('hidden');
+            frame2.classList.remove('full');
+            currentView = 'frame1';
+        } else {
+            frame2.classList.remove('hidden');
+            frame2.classList.add('full');
+            frame1.classList.add('hidden');
+            frame1.classList.remove('full');
+            currentView = 'frame2';
+        }
+    }
+
+    function reloadFrames() {
+        const frame1 = document.getElementById('frame1');
+        const frame2 = document.getElementById('frame2');
+        
+        frame1.src = frame1.src;
+        frame2.src = frame2.src;
+    }
+
+    // Tự động ẩn menu khi click ra ngoài
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('menu');
+        const menuButton = document.querySelector('.menu-button');
+        
+        if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
+            menu.classList.remove('show');
+        }
+    });
+
+    // Ngăn menu đóng khi click vào bên trong
+    document.getElementById('menu').addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+
+    // Load frame khi nhấn Enter
+    document.getElementById('url1').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadFrame(1);
+        }
+    });
+
+    document.getElementById('url2').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            loadFrame(2);
+        }
+    });
+
+    // Xử lý viewport cho iOS
+    function setVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    setVH();
 </script>
+```
+
 </body>
 </html>
