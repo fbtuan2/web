@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<title>Webclip Pro - Enhanced</title>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<style>
+  /* CÁC BIẾN CSS ĐỂ DỄ QUẢN LÝ MÀU VÀ KHOẢNG CÁCH */
+  :root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-light: #f8f9fa;
+    --background-dark: #e9ecef;
+    --text-color: #343a40;
+    --border-color: #dee2e6;
+    --card-bg: #ffffff;
+    --shadow-light: rgba(0, 0, 0, 0.08);
+    --shadow-medium: rgba(0, 0, 0, 0.15);
+    --border-radius-sm: 8px;
+    --border-radius-md: 12px;
+    --fab-size: 60px; /* Kích thước FAB */
+    --safe-area-bottom: env(safe-area-inset-bottom);
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    color: var(--text-color);
+  }
+
+  body {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--background-light);
+    height: -webkit-fill-available;
+  }
+
+  main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* NÚT NỔI (FAB) MỚI */
+  .fab {
+    position: fixed;
+    bottom: calc(24px + var(--safe-area-bottom)); /* Điều chỉnh vị trí */
+    right: 24px;
+    width: var(--fab-size);
+    height: var(--fab-size);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 6px 20px var(--shadow-medium); /* Shadow nổi bật hơn */
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s ease;
+  }
+  .fab:hover {
+    background-color: #0056b3; /* Darker on hover */
+  }
+
+  body.fullscreen-mode .fab,
+  body.fullscreen-mode .status {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  /* POPUP MENU MỚI */
+  .popup-menu {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--background-light);
+    border-top-left-radius: var(--border-radius-md);
+    border-top-right-radius: var(--border-radius-md);
+    box-shadow: 0 -8px 30px var(--shadow-medium); /* Shadow mạnh hơn */
+    z-index: 9999;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Hiệu ứng mượt mà hơn */
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh; /* Tăng chiều cao tối đa */
+    padding-bottom: var(--safe-area-bottom);
+  }
+  .popup-menu.open {
+    transform: translateY(0);
+  }
+  .popup-menu .drag-handle {
+    width: 60px; /* Rộng hơn */
+    height: 6px; /* Dày hơn */
+    border-radius: 3px;
+    background: var(--border-color);
+    margin: 12px auto; /* Khoảng cách lớn hơn */
+  }
+  .popup-menu .links {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px; /* Padding lớn hơn */
+  }
+  
+  /* MỤC LINK MỚI */
+  .link-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border-radius: var(--border-radius-sm);
+    margin: 10px 0; /* Khoảng cách lớn hơn */
+    box-shadow: 0 2px 8px var(--shadow-light); /* Shadow nhẹ cho card */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .link-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-medium);
+  }
+  .link-item a {
+    flex-grow: 1;
+    padding: 14px; /* Padding lớn hơn */
+    color: var(--text-color); /* Màu chữ tối hơn */
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all;
+  }
+  .link-item .actions {
+    display: flex;
+    gap: 12px; /* Khoảng cách giữa các nút */
+    padding-right: 14px;
+  }
+  .link-item .actions button { /* Đổi span thành button để dễ style và accessibiity */
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    cursor: pointer;
+    font-size: 18px; /* Kích thước icon */
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, color 0.2s ease;
+  }
+  .link-item .actions button:hover {
+    opacity: 1;
+    color: var(--primary-color);
+  }
+  .empty-message {
+    text-align: center;
+    color: var(--secondary-color);
+    padding: 60px 20px; /* Padding lớn hơn */
+    font-size: 1.1em;
+  }
+
+  .popup-menu .admin {
+    padding: 20px; /* Padding lớn hơn */
+    border-top: 1px solid var(--border-color);
+    background: var(--background-light);
+  }
+  .popup-menu .admin input {
+    width: 100%; 
+    padding: 12px; /* Padding lớn hơn */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 12px; /* Khoảng cách lớn hơn */
+    box-sizing: border-box; 
+    font-size: 16px;
+  }
+  .popup-menu .admin button {
+    width: 100%; 
+    padding: 14px; /* Padding lớn hơn */
+    border: none; 
+    border-radius: var(--border-radius-sm);
+    background: var(--primary-color); 
+    color: #fff; 
+    font-weight: 600; 
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+  }
+  .popup-menu .admin button:hover {
+    background-color: #0056b3;
+  }
+  .popup-menu .admin button:last-child {
+    background: var(--secondary-color); /* Màu cho nút "Về trang trống" */
+  }
+  .popup-menu .admin button:last-child:hover {
+    background-color: #5a6268;
+  }
+  
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.6); /* Overlay tối hơn */
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease-in-out; 
+    z-index: 9998;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  .status {
+    position: fixed; /* Fixed để luôn ở dưới */
+    bottom: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8); /* Nền tối hơn */
+    color: #fff; padding: 8px 16px; /* Padding lớn hơn */
+    border-radius: 24px; /* Bo tròn hơn */
+    font-size: 14px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 990; /* Đảm bảo nằm trên iframe */
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <iframe id="viewer" src="about:blank"></iframe>
+  <div class="status" id="status">Ready</div>
+  <button class="fab" id="floatingMenuBtn"><i class="fas fa-bars"></i></button>
+</main>
+
+<div class="popup-menu" id="popupMenu">
+  <div class="drag-handle"></div>
+  <div class="links" id="linkList"></div>
+  <div class="admin">
+    <input id="newLinkInput" placeholder="Nhập URL..." />
+    <button id="addBtn"><i class="fas fa-plus-circle"></i> Thêm & Mở Link</button>
+    <button id="resetBtn" style="margin-top:10px;"><i class="fas fa-home"></i> Về Trang Trống</button>
+  </div>
+</div>
+<div class="overlay" id="overlay"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const viewer = document.getElementById("viewer");
+  const status = document.getElementById("status");
+  const popupMenu = document.getElementById("popupMenu");
+  const overlay = document.getElementById("overlay");
+  const linkList = document.getElementById("linkList");
+  const newLinkInput = document.getElementById("newLinkInput");
+  const floatingMenuBtn = document.getElementById("floatingMenuBtn");
+
+  let savedLinks = JSON.parse(localStorage.getItem('myWebclipLinks')) || [];
+
+  function saveLinks() {
+    localStorage.setItem('myWebclipLinks', JSON.stringify(savedLinks));
+  }
+
+  function renderLinks() {
+    linkList.replaceChildren();
+    if (savedLinks.length === 0) {
+      linkList.innerHTML = `<p class="empty-message">Chưa có link nào.<br>Hãy thêm link mới để bắt đầu!</p>`;
+      return;
+    }
+    savedLinks.forEach((linkItem, index) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'link-item';
+      const a = document.createElement("a");
+      a.textContent = linkItem.label || linkItem.url;
+      a.href = linkItem.url;
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLink(linkItem.url);
+      });
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'actions';
+
+      // Nút Sửa
+      const editBtn = document.createElement('button');
+      editBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Icon FontAwesome
+      editBtn.title = 'Sửa link';
+      editBtn.addEventListener('click', () => {
+        const newLabel = prompt('Nhập tên mới cho link:', linkItem.label);
+        if (newLabel !== null) {
+          const newUrl = prompt('Nhập URL mới cho link:', linkItem.url);
+          if (newUrl !== null) {
+            savedLinks[index] = { label: newLabel.trim(), url: newUrl.trim() };
+            saveLinks();
+            renderLinks();
+          }
+        }
+      });
+
+      // Nút Xóa
+      const deleteBtn = document.createElement('button');
+      deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; // Icon FontAwesome
+      deleteBtn.title = 'Xóa link';
+      deleteBtn.addEventListener('click', () => {
+        if (confirm(`Bạn có chắc muốn xóa link "${linkItem.label}" không?`)) {
+          savedLinks.splice(index, 1);
+          saveLinks();
+          renderLinks();
+        }
+      });
+
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(deleteBtn);
+      itemDiv.appendChild(a);
+      itemDiv.appendChild(actionsDiv);
+      linkList.appendChild(itemDiv);
+    });
+  }
+
+  function openLink(url) {
+    status.textContent = "Đang mở: " + url.substring(0, 50);
+    viewer.src = url;
+    closeMenu();
+    document.body.classList.add('fullscreen-mode');
+  }
+  
+  function addAndOpenLink() {
+    let url = newLinkInput.value.trim();
+    if (!url) return;
+    if (!/^https?:\/\//.test(url)) {
+      url = "https://" + url;
+    }
+    const newLink = {
+      label: url.replace(/^https?:\/\//, "").replace(/^www\./, ""),
+      url: url
+    };
+    savedLinks.push(newLink);
+    saveLinks();
+    renderLinks();
+    newLinkInput.value = "";
+    openLink(url);
+  }
+
+  function openMenu() { popupMenu.classList.add("open"); overlay.classList.add("show"); }
+  function closeMenu() { popupMenu.classList.remove("open"); overlay.classList.remove("show"); }
+  
+  floatingMenuBtn.addEventListener('click', openMenu);
+  overlay.addEventListener('click', closeMenu);
+  
+  document.getElementById("addBtn").addEventListener('click', addAndOpenLink);
+  newLinkInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addAndOpenLink();
+  });
+
+  document.getElementById("resetBtn").addEventListener('click', () => {
+    viewer.src = 'about:blank';
+    status.textContent = "Ready";
+    closeMenu();
+    document.body.classList.remove('fullscreen-mode');
+  });
+
+  renderLinks();
+});
+</script>
+</body>
+</html>
