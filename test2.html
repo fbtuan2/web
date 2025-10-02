@@ -35,11 +35,13 @@
         }
 
         /* Container chính cho ứng dụng */
-        .app-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
+.app-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box; /* Thêm dòng này */
+    padding-bottom: env(safe-area-inset-bottom); /* Thêm dòng này */
+}
 
         /* Iframe hiển thị nội dung web */
         .content-iframe {
