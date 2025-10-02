@@ -8,42 +8,30 @@
     <title>Webclip Pro</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        /*
-        --- GHI CHÚ TÍNH NĂNG CSS ---
-        - Đoạn CSS này tùy chỉnh giao diện để tối ưu cho trải nghiệm Webclip trên iOS.
-        - Sử dụng font 'Inter' để có giao diện hiện đại.
-        - Thiết kế dạng nổi (floating) cho nút menu và popup.
-        - Tùy chỉnh màu sắc và hiệu ứng để phù hợp với Dark Theme.
-        - Đảm bảo iframe chiếm toàn bộ không gian và nội dung không bị tràn.
-        - env(safe-area-inset-bottom) giúp giao diện không bị thanh điều hướng của iPhone che mất.
-        */
-
         html, body {
             height: 100%;
             margin: 0;
             overflow: hidden;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #121212; /* Màu nền chính của Dark Theme */
+            background-color: #121212;
+
+            /* === ĐÂY LÀ THAY ĐỔI QUAN TRỌNG === */
+            padding-bottom: env(safe-area-inset-bottom); 
+            box-sizing: border-box; 
         }
 
-        /* Container chính cho ứng dụng */
-.app-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box; /* Thêm dòng này */
-    padding-bottom: env(safe-area-inset-bottom); /* Thêm dòng này */
-}
+        .app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
 
-        /* Iframe hiển thị nội dung web */
         .content-iframe {
             position: absolute;
             top: 0;
@@ -51,7 +39,7 @@
             width: 100%;
             height: 100%;
             border: none;
-            visibility: hidden; /* Mặc định ẩn đi, chỉ hiện khi có link */
+            visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
         }
@@ -61,7 +49,6 @@
             opacity: 1;
         }
         
-        /* Thông báo chào mừng ban đầu */
         .welcome-message {
             display: flex;
             justify-content: center;
@@ -73,14 +60,14 @@
             padding: 20px;
         }
 
-        /* Nút menu nổi (Floating Action Button) */
         .fab-menu-button {
             position: fixed;
+            /* Điều chỉnh lại vị trí bottom để nó nằm trong vùng an toàn mới của body */
             bottom: calc(20px + env(safe-area-inset-bottom));
             right: 20px;
             width: 56px;
             height: 56px;
-            background: transparent; /* Đã thay đổi: làm trong suốt */
+            background: transparent;
             border-radius: 50%;
             border: none;
             color: white;
@@ -88,7 +75,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: none; /* Đã thay đổi: bỏ bóng */
+            box-shadow: none;
             cursor: pointer;
             z-index: 1050;
             transition: transform 0.2s ease-out;
@@ -98,12 +85,6 @@
             transform: scale(0.95);
         }
 
-        /*
-        --- GHI CHÚ TÍNH NĂNG POPUP MENU ---
-        - Sử dụng Modal của Bootstrap để tạo popup.
-        - Tùy chỉnh vị trí để menu hiện ở dưới màn hình.
-        - Giao diện trong suốt (translucent) và có hiệu ứng mờ nền (backdrop-filter).
-        */
         .modal.fade .modal-dialog {
             transition: transform .3s ease-out;
             transform: translateY(100%);
@@ -125,12 +106,13 @@
         .modal-content {
             border: none;
             border-radius: 20px 20px 0 0;
-            background-color: rgba(28, 28, 30, 0.85); /* Màu nền mờ kiểu iOS */
+            background-color: rgba(28, 28, 30, 0.85);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
+            /* Thêm padding cho nội dung modal để không bị che bởi Home Bar */
+            padding-bottom: env(safe-area-inset-bottom);
         }
         
-        /* Tùy chỉnh danh sách link trong menu */
         .link-list-item {
             display: flex;
             align-items: center;
@@ -152,14 +134,14 @@
 
     <div class="app-container">
         <iframe id="content-iframe" class="content-iframe" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
-        
         <div id="welcome-message" class="welcome-message">
             <p>Sẵn sàng khám phá<br>Nhấn <i class="fas fa-ellipsis-v mx-1"></i> để thêm và mở link</p>
         </div>
     </div>
 
     <button id="menu-button" class="fab-menu-button" data-bs-toggle="modal" data-bs-target="#menu-popup">
-        <i class="fas fa-ellipsis-v"></i> </button>
+        <i class="fas fa-ellipsis-v"></i>
+    </button>
 
     <div class="modal fade" id="menu-popup" tabindex="-1" aria-labelledby="menuPopupLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable">
@@ -174,30 +156,16 @@
                         <input type="url" id="new-link-input" class="form-control" placeholder="https://example.com">
                         <button id="add-link-btn" class="btn btn-primary"><i class="fas fa-plus"></i></button>
                     </div>
-
-                    <ul id="link-list" class="list-group list-group-flush">
-                        </ul>
+                    <ul id="link-list" class="list-group list-group-flush"></ul>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-    /*
-    --- GHI CHÚ TÍNH NĂNG JAVASCRIPT ---
-    - Đoạn script này quản lý toàn bộ logic của ứng dụng.
-    - DOMContentLoaded: Đảm bảo script chỉ chạy khi toàn bộ trang đã tải xong.
-    - localStorage: Dùng để lưu danh sách link của người dùng, không bị mất khi tải lại trang.
-    - renderLinks(): Cập nhật và hiển thị danh sách link trong menu.
-    - openLink(): Mở một URL trong iframe và ẩn menu đi.
-    - addLink(): Thêm link mới vào danh sách và lưu lại.
-    - deleteLink(): Xóa một link khỏi danh sách.
-    - Tự động thêm "https://" nếu người dùng quên.
-    */
+    // Javascript không có gì thay đổi
     document.addEventListener('DOMContentLoaded', () => {
-        // Lấy các element cần thiết từ DOM
         const iframe = document.getElementById('content-iframe');
         const welcomeMessage = document.getElementById('welcome-message');
         const menuButton = document.getElementById('menu-button');
@@ -205,22 +173,12 @@
         const newLinkInput = document.getElementById('new-link-input');
         const addLinkBtn = document.getElementById('add-link-btn');
         const linkList = document.getElementById('link-list');
-
-        // Lấy danh sách link từ bộ nhớ cục bộ (localStorage) hoặc tạo mảng rỗng
         let savedLinks = JSON.parse(localStorage.getItem('webclip-links')) || [];
-
-        /**
-         * Hàm lưu danh sách link hiện tại vào localStorage
-         */
         const saveLinks = () => {
             localStorage.setItem('webclip-links', JSON.stringify(savedLinks));
         };
-
-        /**
-         * Hàm hiển thị (render) danh sách link ra menu
-         */
         const renderLinks = () => {
-            linkList.innerHTML = ''; // Xóa danh sách cũ
+            linkList.innerHTML = '';
             if (savedLinks.length === 0) {
                 linkList.innerHTML = '<li class="list-group-item text-center text-muted">Chưa có link nào được lưu.</li>';
                 return;
@@ -228,8 +186,6 @@
             savedLinks.forEach((link, index) => {
                 const listItem = document.createElement('li');
                 listItem.className = 'link-list-item list-group-item bg-transparent';
-                
-                // Tạo link để mở
                 const linkAnchor = document.createElement('a');
                 linkAnchor.href = '#';
                 linkAnchor.textContent = link.label || link.url;
@@ -238,58 +194,35 @@
                     e.preventDefault();
                     openLink(link.url);
                 });
-
-                // Tạo nút xóa
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'btn btn-sm btn-outline-danger ms-3';
                 deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteButton.addEventListener('click', () => {
                     deleteLink(index);
                 });
-                
                 listItem.appendChild(linkAnchor);
                 listItem.appendChild(deleteButton);
                 linkList.appendChild(listItem);
             });
         };
-        
-        /**
-         * Hàm mở một URL trong iframe
-         * @param {string} url - Đường dẫn trang web cần mở
-         */
         const openLink = (url) => {
-            iframe.src = url; // Gán URL cho iframe
-            iframe.classList.add('visible'); // Hiện iframe
-            welcomeMessage.style.display = 'none'; // Ẩn thông báo chào mừng
-            menuPopup.hide(); // Tự động ẩn menu
+            iframe.src = url;
+            iframe.classList.add('visible');
+            welcomeMessage.style.display = 'none';
+            menuPopup.hide();
         };
-        
-        /**
-         * Hàm xử lý việc thêm link mới
-         */
         const addLink = () => {
             let url = newLinkInput.value.trim();
-            if (!url) return; // Bỏ qua nếu input rỗng
-
-            // Tự động thêm https:// nếu chưa có
+            if (!url) return;
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
-            
-            // Tạo một nhãn (label) ngắn gọn từ URL
             const label = new URL(url).hostname.replace('www.', '');
-
-            // Thêm vào mảng, lưu lại và render lại danh sách
             savedLinks.unshift({ url, label });
             saveLinks();
             renderLinks();
-            newLinkInput.value = ''; // Xóa nội dung trong ô nhập
+            newLinkInput.value = '';
         };
-
-        /**
-         * Hàm xóa một link khỏi danh sách
-         * @param {number} index - Vị trí của link trong mảng cần xóa
-         */
         const deleteLink = (index) => {
             if (confirm(`Bạn có chắc muốn xóa link này không?\n${savedLinks[index].url}`)) {
                 savedLinks.splice(index, 1);
@@ -297,23 +230,12 @@
                 renderLinks();
             }
         };
-
-        // Gán sự kiện cho nút Thêm link
         addLinkBtn.addEventListener('click', addLink);
         newLinkInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 addLink();
             }
         });
-        
-        // --- CHẶN LINK TRONG IFRAME NHẢY TRANG MỚI ---
-        // Kỹ thuật này sử dụng 'sandbox' trong thẻ iframe.
-        // Thuộc tính 'sandbox' sẽ giới hạn các quyền của trang trong iframe.
-        // 'allow-popups', 'allow-scripts', 'allow-same-origin', 'allow-forms' cho phép trang hoạt động gần như bình thường.
-        // Tuy nhiên, các hành vi cố gắng mở cửa sổ mới (target="_blank") sẽ bị trình duyệt chặn lại,
-        // giúp giữ người dùng luôn ở trong webclip. Đây là cách hiệu quả nhất cho Safari trên iOS.
-
-        // Khởi chạy ứng dụng bằng cách render danh sách link lần đầu
         renderLinks();
     });
     </script>
