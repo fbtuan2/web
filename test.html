@@ -1,319 +1,464 @@
 <!DOCTYPE html>
-<html lang="vi" data-bs-theme="dark">
+<html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Webclip Pro</title>
+    <title>Webclip Ultimate</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" />
 
     <style>
         /*
         --- GHI CHÚ TÍNH NĂNG CSS ---
-        - Đoạn CSS này tùy chỉnh giao diện để tối ưu cho trải nghiệm Webclip trên iOS.
-        - Sử dụng font 'Inter' để có giao diện hiện đại.
-        - Thiết kế dạng nổi (floating) cho nút menu và popup.
-        - Tùy chỉnh màu sắc và hiệu ứng để phù hợp với Dark Theme.
-        - Đảm bảo iframe chiếm toàn bộ không gian và nội dung không bị tràn.
-        - env(safe-area-inset-bottom) giúp giao diện không bị thanh điều hướng của iPhone che mất.
+        - Sử dụng biến CSS (--accent-color, --bg-color,...) để dễ dàng thay đổi theme Sáng/Tối và màu nhấn.
+        - Thiết kế ưu tiên cho mobile, tối ưu hiển thị trên Safari.
+        - Hiệu ứng 'backdrop-filter' tạo giao diện mờ kiểu iOS.
+        - Các hiệu ứng transition mượt mà cho việc ẩn/hiện các thành phần UI.
         */
 
-        html, body {
+        :root {
+            --accent-color: #0d6efd;
+            --accent-color-rgb: 13, 110, 253;
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
+        html[data-theme='dark'] {
+            --bg-color: #000000;
+            --text-color: #f8f9fa;
+            --ui-bg-color: rgba(28, 28, 30, 0.85);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --input-bg-color: #1c1c1e;
+        }
+
+        html[data-theme='light'] {
+            --bg-color: #f0f2f5;
+            --text-color: #212529;
+            --ui-bg-color: rgba(248, 248, 250, 0.85);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --input-bg-color: #ffffff;
+        }
+
+        body, html {
             height: 100%;
             margin: 0;
             overflow: hidden;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #121212; /* Màu nền chính của Dark Theme */
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
 
-        /* Container chính cho ứng dụng */
+        /* Container & Iframe */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
         }
 
-        /* Iframe hiển thị nội dung web */
         .content-iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
             border: none;
-            visibility: hidden; /* Mặc định ẩn đi, chỉ hiện khi có link */
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            background-color: var(--bg-color);
         }
 
-        .content-iframe.visible {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        /* Thông báo chào mừng ban đầu */
-        .welcome-message {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            color: #888;
-            font-size: 1.2rem;
-            text-align: center;
-            padding: 20px;
-        }
-
-        /* Nút menu nổi (Floating Action Button) */
-        .fab-menu-button {
+        /* Nút menu (⋮) mới */
+        .menu-fab {
             position: fixed;
-            bottom: calc(20px + env(safe-area-inset-bottom));
+            bottom: calc(20px + var(--safe-area-bottom));
             right: 20px;
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(145deg, #0d6efd, #0a58ca); /* Gradient cho nút nổi bật */
+            width: 44px;
+            height: 44px;
+            background-color: rgba(128, 128, 128, 0.3);
             border-radius: 50%;
             border: none;
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
             cursor: pointer;
-            z-index: 1050;
-            transition: transform 0.2s ease-out;
+            z-index: 1040;
+            transition: opacity 0.3s, transform 0.3s;
+            backdrop-filter: blur(5px);
         }
 
-        .fab-menu-button:active {
-            transform: scale(0.95);
-        }
-
-        /*
-        --- GHI CHÚ TÍNH NĂNG POPUP MENU ---
-        - Sử dụng Modal của Bootstrap để tạo popup.
-        - Tùy chỉnh vị trí để menu hiện ở dưới màn hình.
-        - Giao diện trong suốt (translucent) và có hiệu ứng mờ nền (backdrop-filter).
-        */
-        .modal.fade .modal-dialog {
-            transition: transform .3s ease-out;
-            transform: translateY(100%);
-        }
-
-        .modal.show .modal-dialog {
-            transform: translateY(0);
-        }
-        
-        .modal-dialog {
+        /* Thanh điều hướng nhanh */
+        .nav-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: 0;
-            max-width: 100%;
+            bottom: calc(15px + var(--safe-area-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 15px;
+            background-color: var(--ui-bg-color);
+            border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(15px);
+            z-index: 1040;
+            display: flex;
+            gap: 15px;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .nav-bar button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 18px;
+            padding: 5px;
         }
 
+        /* Trạng thái ẩn của các nút điều khiển */
+        .ui-hidden .menu-fab,
+        .ui-hidden .nav-bar {
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            pointer-events: none;
+        }
+        .ui-hidden .nav-bar {
+            transform: translateX(-50%) translateY(20px) scale(0.9);
+        }
+
+        /* Tùy chỉnh Modal */
         .modal-content {
+            background-color: var(--ui-bg-color);
+            backdrop-filter: blur(15px);
             border: none;
             border-radius: 20px 20px 0 0;
-            background-color: rgba(28, 28, 30, 0.85); /* Màu nền mờ kiểu iOS */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
         }
-        
-        /* Tùy chỉnh danh sách link trong menu */
-        .link-list-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .modal-dialog { margin: 0; max-width: 100vw; position: fixed; bottom: 0;}
+        .list-group-item { background: transparent; }
+        .form-control, .input-group-text {
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            border-color: var(--border-color);
         }
-        .link-list-item:last-child {
-            border-bottom: none;
+        .link-item .fa-star.favorited { color: #ffc107; }
+        .link-item .drag-handle { cursor: grab; }
+
+        /* Tùy chỉnh thanh NProgress */
+        #nprogress .bar {
+            background: var(--accent-color) !important;
+            height: 3px !important;
         }
-        .link-list-item a {
-            flex-grow: 1;
-            text-decoration: none;
-            color: #f8f9fa;
-            word-break: break-all;
+        #nprogress .peg {
+            box-shadow: 0 0 10px var(--accent-color), 0 0 5px var(--accent-color) !important;
         }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <iframe id="content-iframe" class="content-iframe" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
-        
-        <div id="welcome-message" class="welcome-message">
-            <p>Sẵn sàng khám phá<br>Nhấn <i class="fas fa-bars mx-1"></i> để thêm và mở link</p>
-        </div>
+    <div id="app-container" class="app-container">
+        <iframe id="content-iframe" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"></iframe>
+    </div>
+    
+    <button id="menu-fab" class="menu-fab" data-bs-toggle="modal" data-bs-target="#menu-popup">
+        <i class="fas fa-ellipsis-v"></i>
+    </button>
+    
+    <div id="nav-bar" class="nav-bar" style="display: none;">
+        <button id="nav-back"><i class="fas fa-arrow-left"></i></button>
+        <button id="nav-forward"><i class="fas fa-arrow-right"></i></button>
+        <button id="nav-refresh"><i class="fas fa-sync-alt"></i></button>
+        <button id="nav-share"><i class="fas fa-share-alt"></i></button>
     </div>
 
-    <button id="menu-button" class="fab-menu-button" data-bs-toggle="modal" data-bs-target="#menu-popup">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <div class="modal fade" id="menu-popup" tabindex="-1" aria-labelledby="menuPopupLabel" aria-hidden="true">
+    <div class="modal fade" id="menu-popup" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title" id="menuPopupLabel"><i class="fas fa-link me-2"></i>Quản lý liên kết</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Menu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="input-group mb-4">
-                        <span class="input-group-text"><i class="fas fa-globe"></i></span>
-                        <input type="url" id="new-link-input" class="form-control" placeholder="https://example.com">
-                        <button id="add-link-btn" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+                    <ul class="nav nav-tabs nav-fill" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#links-tab-pane" type="button"><i class="fas fa-link"></i> Links</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#settings-tab-pane" type="button"><i class="fas fa-cog"></i> Cài đặt</button></li>
+                    </ul>
+                    <div class="tab-content pt-3">
+                        <div class="tab-pane fade show active" id="links-tab-pane" role="tabpanel">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" id="search-input" class="form-control" placeholder="Tìm kiếm link...">
+                            </div>
+                            <div class="d-flex gap-2 mb-3">
+                                <select class="form-select" id="category-select"></select>
+                                <button class="btn btn-outline-secondary" id="delete-category-btn" title="Xóa thư mục hiện tại"><i class="fas fa-trash"></i></button>
+                            </div>
+                            <ul id="link-list" class="list-group list-group-flush mb-3"></ul>
+                            <div class="input-group mb-3">
+                                <input type="url" id="new-link-input" class="form-control" placeholder="URL mới...">
+                                <button id="add-link-btn" class="btn btn-primary">Thêm Link</button>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="new-category-input" class="form-control" placeholder="Tên thư mục mới...">
+                                <button id="add-category-btn" class="btn btn-secondary">Thêm Thư mục</button>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel">
+                            <h6>Giao diện</h6>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="theme-switch">
+                                <label class="form-check-label" for="theme-switch">Chế độ Tối (Dark Mode)</label>
+                            </div>
+                            <h6>Màu nhấn</h6>
+                            <div id="color-options" class="d-flex gap-2"></div>
+                        </div>
                     </div>
-
-                    <ul id="link-list" class="list-group list-group-flush">
-                        </ul>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <script>
     /*
     --- GHI CHÚ TÍNH NĂNG JAVASCRIPT ---
-    - Đoạn script này quản lý toàn bộ logic của ứng dụng.
-    - DOMContentLoaded: Đảm bảo script chỉ chạy khi toàn bộ trang đã tải xong.
-    - localStorage: Dùng để lưu danh sách link của người dùng, không bị mất khi tải lại trang.
-    - renderLinks(): Cập nhật và hiển thị danh sách link trong menu.
-    - openLink(): Mở một URL trong iframe và ẩn menu đi.
-    - addLink(): Thêm link mới vào danh sách và lưu lại.
-    - deleteLink(): Xóa một link khỏi danh sách.
-    - Tự động thêm "https://" nếu người dùng quên.
+    - Toàn bộ logic được gói trong DOMContentLoaded để đảm bảo trang tải xong mới chạy.
+    - Dữ liệu (links, categories, settings) được lưu trong một object `appData` và đồng bộ với localStorage.
+    - Kiến trúc module hóa: các hàm được chia nhỏ theo chức năng (render, save, event handlers,...).
+    - Tận dụng các thư viện ngoài để có tính năng mạnh mẽ (NProgress, SortableJS, Bootstrap).
     */
     document.addEventListener('DOMContentLoaded', () => {
-        // Lấy các element cần thiết từ DOM
+        // ### Khai báo biến và DOM Elements ###
         const iframe = document.getElementById('content-iframe');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const menuButton = document.getElementById('menu-button');
+        const navBar = document.getElementById('nav-bar');
+        const appContainer = document.getElementById('app-container');
         const menuPopup = new bootstrap.Modal(document.getElementById('menu-popup'));
-        const newLinkInput = document.getElementById('new-link-input');
-        const addLinkBtn = document.getElementById('add-link-btn');
-        const linkList = document.getElementById('link-list');
+        
+        // ### Cấu trúc dữ liệu mặc định ###
+        const defaultData = {
+            settings: {
+                theme: 'dark',
+                accentColor: '#0d6efd',
+                activeCategoryId: 'cat-default',
+            },
+            categories: [
+                { id: 'cat-default', name: 'Chung', links: [] }
+            ]
+        };
+        
+        // ### Tải dữ liệu từ localStorage hoặc dùng dữ liệu mặc định ###
+        let appData = JSON.parse(localStorage.getItem('webclipUltimateData')) || defaultData;
 
-        // Lấy danh sách link từ bộ nhớ cục bộ (localStorage) hoặc tạo mảng rỗng
-        let savedLinks = JSON.parse(localStorage.getItem('webclip-links')) || [];
-
-        /**
-         * Hàm lưu danh sách link hiện tại vào localStorage
-         */
-        const saveLinks = () => {
-            localStorage.setItem('webclip-links', JSON.stringify(savedLinks));
+        // ### Các hàm quản lý dữ liệu (CRUD & State) ###
+        const saveData = () => localStorage.setItem('webclipUltimateData', JSON.stringify(appData));
+        const getActiveCategory = () => appData.categories.find(c => c.id === appData.settings.activeCategoryId) || appData.categories[0];
+        
+        // ### Các hàm render và cập nhật UI ###
+        const applySettings = () => {
+            document.documentElement.setAttribute('data-theme', appData.settings.theme);
+            document.documentElement.style.setProperty('--accent-color', appData.settings.accentColor);
+            document.getElementById('theme-switch').checked = appData.settings.theme === 'dark';
         };
 
-        /**
-         * Hàm hiển thị (render) danh sách link ra menu
-         */
+        const renderUI = () => {
+            renderCategories();
+            renderLinks();
+        };
+
+        const renderCategories = () => {
+            const select = document.getElementById('category-select');
+            select.innerHTML = '';
+            appData.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+            select.value = appData.settings.activeCategoryId;
+        };
+
         const renderLinks = () => {
-            linkList.innerHTML = ''; // Xóa danh sách cũ
-            if (savedLinks.length === 0) {
-                linkList.innerHTML = '<li class="list-group-item text-center text-muted">Chưa có link nào được lưu.</li>';
+            const list = document.getElementById('link-list');
+            const category = getActiveCategory();
+            if (!category) return;
+
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            list.innerHTML = '';
+
+            const filteredLinks = category.links.filter(link => 
+                (link.label || link.url).toLowerCase().includes(searchTerm)
+            );
+            
+            // Sắp xếp: ghim lên đầu, còn lại giữ nguyên
+            filteredLinks.sort((a, b) => (b.isFavorite || 0) - (a.isFavorite || 0));
+
+            if (filteredLinks.length === 0) {
+                list.innerHTML = `<li class="list-group-item text-muted text-center">Trống</li>`;
                 return;
             }
-            savedLinks.forEach((link, index) => {
-                const listItem = document.createElement('li');
-                listItem.className = 'link-list-item list-group-item bg-transparent';
-                
-                // Tạo link để mở
-                const linkAnchor = document.createElement('a');
-                linkAnchor.href = '#';
-                linkAnchor.textContent = link.label || link.url;
-                linkAnchor.title = link.url;
-                linkAnchor.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    openLink(link.url);
-                });
 
-                // Tạo nút xóa
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'btn btn-sm btn-outline-danger ms-3';
-                deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
-                deleteButton.addEventListener('click', () => {
-                    deleteLink(index);
-                });
-                
-                listItem.appendChild(linkAnchor);
-                listItem.appendChild(deleteButton);
-                linkList.appendChild(listItem);
+            filteredLinks.forEach((link, index) => {
+                const originalIndex = category.links.findIndex(l => l.url === link.url && l.label === link.label);
+                const item = document.createElement('li');
+                item.className = 'list-group-item d-flex align-items-center link-item';
+                item.dataset.id = originalIndex;
+                item.innerHTML = `
+                    <span class="drag-handle me-2 text-muted"><i class="fas fa-grip-vertical"></i></span>
+                    <a href="#" class="flex-grow-1 text-decoration-none text-light">${link.label || link.url}</a>
+                    <button class="btn btn-sm favorite-btn">${link.isFavorite ? '<i class="fas fa-star favorited"></i>' : '<i class="far fa-star"></i>'}</button>
+                    <button class="btn btn-sm btn-outline-danger delete-link-btn"><i class="fas fa-trash"></i></button>
+                `;
+                item.querySelector('a').onclick = (e) => { e.preventDefault(); openLink(link.url); };
+                item.querySelector('.delete-link-btn').onclick = () => deleteLink(originalIndex);
+                item.querySelector('.favorite-btn').onclick = () => toggleFavorite(originalIndex);
+                list.appendChild(item);
             });
-        };
-        
-        /**
-         * Hàm mở một URL trong iframe
-         * @param {string} url - Đường dẫn trang web cần mở
-         */
-        const openLink = (url) => {
-            iframe.src = url; // Gán URL cho iframe
-            iframe.classList.add('visible'); // Hiện iframe
-            welcomeMessage.style.display = 'none'; // Ẩn thông báo chào mừng
-            menuPopup.hide(); // Tự động ẩn menu
-        };
-        
-        /**
-         * Hàm xử lý việc thêm link mới
-         */
-        const addLink = () => {
-            let url = newLinkInput.value.trim();
-            if (!url) return; // Bỏ qua nếu input rỗng
-
-            // Tự động thêm https:// nếu chưa có
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
             
-            // Tạo một nhãn (label) ngắn gọn từ URL
-            const label = new URL(url).hostname.replace('www.', '');
-
-            // Thêm vào mảng, lưu lại và render lại danh sách
-            savedLinks.unshift({ url, label });
-            saveLinks();
-            renderLinks();
-            newLinkInput.value = ''; // Xóa nội dung trong ô nhập
+            initSortable();
+        };
+        
+        // ### Các hàm xử lý chức năng chính ###
+        const openLink = (url) => {
+            iframe.style.visibility = 'hidden';
+            NProgress.start();
+            iframe.src = url;
+            iframe.onload = () => {
+                NProgress.done();
+                iframe.style.visibility = 'visible';
+            };
+            navBar.style.display = 'flex';
+            menuPopup.hide();
         };
 
-        /**
-         * Hàm xóa một link khỏi danh sách
-         * @param {number} index - Vị trí của link trong mảng cần xóa
-         */
+        const addLink = () => {
+            const input = document.getElementById('new-link-input');
+            let url = input.value.trim();
+            if (!url) return;
+            if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+            
+            const label = new URL(url).hostname.replace('www.', '');
+            const category = getActiveCategory();
+            category.links.push({ url, label, isFavorite: false });
+            
+            saveData();
+            renderLinks();
+            input.value = '';
+        };
+
         const deleteLink = (index) => {
-            if (confirm(`Bạn có chắc muốn xóa link này không?\n${savedLinks[index].url}`)) {
-                savedLinks.splice(index, 1);
-                saveLinks();
+            const category = getActiveCategory();
+            if (confirm(`Xóa link "${category.links[index].label}"?`)) {
+                category.links.splice(index, 1);
+                saveData();
                 renderLinks();
             }
         };
-
-        // Gán sự kiện cho nút Thêm link
-        addLinkBtn.addEventListener('click', addLink);
-        newLinkInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addLink();
-            }
-        });
         
-        // --- CHẶN LINK TRONG IFRAME NHẢY TRANG MỚI ---
-        // Kỹ thuật này sử dụng 'sandbox' trong thẻ iframe.
-        // Thuộc tính 'sandbox' sẽ giới hạn các quyền của trang trong iframe.
-        // 'allow-popups', 'allow-scripts', 'allow-same-origin', 'allow-forms' cho phép trang hoạt động gần như bình thường.
-        // Tuy nhiên, các hành vi cố gắng mở cửa sổ mới (target="_blank") sẽ bị trình duyệt chặn lại,
-        // giúp giữ người dùng luôn ở trong webclip. Đây là cách hiệu quả nhất cho Safari trên iOS.
+        const toggleFavorite = (index) => {
+            const category = getActiveCategory();
+            category.links[index].isFavorite = !category.links[index].isFavorite;
+            saveData();
+            renderLinks();
+        };
 
-        // Khởi chạy ứng dụng bằng cách render danh sách link lần đầu
-        renderLinks();
+        const addCategory = () => {
+            const input = document.getElementById('new-category-input');
+            const name = input.value.trim();
+            if (!name) return;
+            const newId = 'cat-' + Date.now();
+            appData.categories.push({ id: newId, name, links: [] });
+            appData.settings.activeCategoryId = newId;
+            saveData();
+            renderUI();
+            input.value = '';
+        };
+
+        const deleteCategory = () => {
+            const category = getActiveCategory();
+            if (appData.categories.length <= 1) {
+                alert('Không thể xóa thư mục cuối cùng.');
+                return;
+            }
+            if (confirm(`Xóa thư mục "${category.name}" và tất cả link bên trong?`)) {
+                appData.categories = appData.categories.filter(c => c.id !== category.id);
+                appData.settings.activeCategoryId = appData.categories[0].id;
+                saveData();
+                renderUI();
+            }
+        };
+
+        const initSortable = () => {
+            const list = document.getElementById('link-list');
+            new Sortable(list, {
+                animation: 150,
+                handle: '.drag-handle',
+                onEnd: (evt) => {
+                    const category = getActiveCategory();
+                    const [reorderedItem] = category.links.splice(evt.oldIndex, 1);
+                    category.links.splice(evt.newIndex, 0, reorderedItem);
+                    saveData();
+                },
+            });
+        };
+
+        // ### Gán sự kiện cho các elements ###
+        // Nút điều hướng
+        document.getElementById('nav-back').onclick = () => { try { iframe.contentWindow.history.back(); } catch (e) {} };
+        document.getElementById('nav-forward').onclick = () => { try { iframe.contentWindow.history.forward(); } catch (e) {} };
+        document.getElementById('nav-refresh').onclick = () => { iframe.src = iframe.src; };
+        document.getElementById('nav-share').onclick = () => {
+            if (navigator.share) {
+                navigator.share({ title: iframe.contentDocument.title, url: iframe.src });
+            }
+        };
+
+        // Quản lý links & categories
+        document.getElementById('add-link-btn').onclick = addLink;
+        document.getElementById('new-link-input').onkeypress = e => { if (e.key === 'Enter') addLink(); };
+        document.getElementById('add-category-btn').onclick = addCategory;
+        document.getElementById('new-category-input').onkeypress = e => { if (e.key === 'Enter') addCategory(); };
+        document.getElementById('delete-category-btn').onclick = deleteCategory;
+        document.getElementById('category-select').onchange = (e) => {
+            appData.settings.activeCategoryId = e.target.value;
+            saveData();
+            renderLinks();
+        };
+        document.getElementById('search-input').oninput = renderLinks;
+        
+        // Cài đặt
+        document.getElementById('theme-switch').onchange = (e) => {
+            appData.settings.theme = e.target.checked ? 'dark' : 'light';
+            applySettings();
+            saveData();
+        };
+
+        // Tạo các nút chọn màu
+        const colors = ['#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#198754', '#dc3545'];
+        const colorOptions = document.getElementById('color-options');
+        colors.forEach(color => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.backgroundColor = color;
+            btn.style.width = '30px';
+            btn.style.height = '30px';
+            btn.onclick = () => {
+                appData.settings.accentColor = color;
+                applySettings();
+                saveData();
+            };
+            colorOptions.appendChild(btn);
+        });
+
+        // Ẩn/hiện UI khi chạm
+        let uiVisible = true;
+        appContainer.onclick = (e) => {
+            if (e.target === appContainer) { // Chỉ kích hoạt khi click vào vùng trống, không phải iframe
+                uiVisible = !uiVisible;
+                document.body.classList.toggle('ui-hidden', !uiVisible);
+            }
+        };
+
+        // ### Khởi tạo ứng dụng ###
+        applySettings();
+        renderUI();
     });
     </script>
 </body>
