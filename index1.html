@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <title>WEB</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #121212;
+        }
+        .app-container { position: relative; width: 100%; height: 100%; }
+        .content-iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: none; visibility: hidden; opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .content-iframe.visible { visibility: visible; opacity: 1; }
+        .welcome-message {
+            display: flex; justify-content: center; align-items: center;
+            height: 100%; color: #888; font-size: 1.2rem;
+            text-align: center; padding: 20px;
+        }
+        .fab-menu-button {
+            position: fixed;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0)); /* Safe area for mobile */
+            right: 20px; width: 56px; height: 56px;
+            background: transparent; border-radius: 50%; border: none;
+            color: white; font-size: 24px; display: flex;
+            justify-content: center; align-items: center;
+            box-shadow: none; cursor: pointer; z-index: 1050;
+            transition: transform 0.2s ease-out;
+        }
+        .fab-menu-button:active { transform: scale(0.95); }
+        .modal.fade .modal-dialog { transition: transform .3s ease-out; transform: translateY(100%); }
+        .modal.show .modal-dialog { transform: translateY(0); }
+        .modal-dialog {
+            position: fixed; bottom: 0; left: 0; right: 0; margin: 0; max-width: 100%;
+        }
+        .modal-content {
+            border: none; border-radius: 20px 20px 0 0;
+            background-color: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+        }
+        .link-list-item {
+            display: flex; align-items: center; padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .link-list-item:last-child { border-bottom: none; }
+        .link-list-item a {
+            flex-grow: 1; text-decoration: none; color: #f8f9fa; word-break: break-all;
+        }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <iframe id="content-iframe" class="content-iframe" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+        <div id="welcome-message" class="welcome-message">
+            <p id="welcome-text">Chào mừng! Hãy lưu link để bắt đầu.</p>
+        </div>
+    </div>
+    <button id="menu-button" class="fab-menu-button" aria-label="Mở menu liên kết" data-bs-toggle="modal" data-bs-target="#menu-popup">
+        <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+    </button>
+    <div class="modal fade" id="menu-popup" tabindex="-1" aria-labelledby="menuPopupLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="menuPopupLabel"><i class="fas fa-link me-2"></i>Liên Kết</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-4">
+                        <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                        <input type="url" id="new-link-input" class="form-control" placeholder="Nhập link..." aria-label="Nhập link mới">
+                        <button id="add-link-btn" class="btn btn-primary" aria-label="Thêm liên kết"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul id="link-list" class="list-group list-group-flush"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const iframe = document.getElementById('content-iframe');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const welcomeText = document.getElementById('welcome-text');
+        const menuButton = document.getElementById('menu-button');
+        const menuPopupEl = document.getElementById('menu-popup');
+        const menuPopup = new bootstrap.Modal(menuPopupEl);
+        const newLinkInput = document.getElementById('new-link-input');
+        const addLinkBtn = document.getElementById('add-link-btn');
+        const linkList = document.getElementById('link-list');
+
+        let savedLinks = [];
+        const STORAGE_KEY = 'webclip-links';
+
+        // Load links from localStorage only once
+        function loadLinks() {
+            try {
+                savedLinks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch {
+                savedLinks = [];
+            }
+        }
+
+        function saveLinks() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedLinks));
+        }
+
+        function setWelcomeMessage() {
+            if (savedLinks.length === 0) {
+                welcomeText.textContent = 'Chào mừng! Hãy lưu link để bắt đầu.';
+            } else {
+                welcomeText.textContent = 'Chọn một liên kết để hiển thị nội dung.';
+            }
+        }
+
+        function renderLinks() {
+            linkList.innerHTML = '';
+            if (savedLinks.length === 0) {
+                linkList.innerHTML = '<li class="list-group-item text-center text-muted bg-transparent">Chưa có link nào được lưu.</li>';
+                setWelcomeMessage();
+                welcomeMessage.style.display = 'flex';
+                iframe.classList.remove('visible');
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            savedLinks.forEach((link, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'link-list-item list-group-item bg-transparent';
+
+                const linkAnchor = document.createElement('a');
+                linkAnchor.href = '#';
+                linkAnchor.textContent = link.label || link.url;
+                linkAnchor.title = link.url;
+                linkAnchor.setAttribute('aria-label', `Mở liên kết ${link.label || link.url}`);
+                linkAnchor.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openLink(link.url);
+                });
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-sm btn-outline-danger ms-3';
+                deleteButton.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i><span class="sr-only">Xóa liên kết</span>';
+                deleteButton.addEventListener('click', () => {
+                    deleteLink(index);
+                });
+
+                listItem.appendChild(linkAnchor);
+                listItem.appendChild(deleteButton);
+                fragment.appendChild(listItem);
+            });
+            linkList.appendChild(fragment);
+        }
+
+        function openLink(url) {
+            iframe.src = url;
+            iframe.classList.add('visible');
+            welcomeMessage.style.display = 'none';
+            menuPopup.hide();
+        }
+
+        function isValidUrl(url) {
+            // Basic validation
+            try {
+                const parsed = new URL(url);
+                return ['http:', 'https:'].includes(parsed.protocol);
+            } catch {
+                return false;
+            }
+        }
+
+        function addLink() {
+            let url = newLinkInput.value.trim();
+            if (!url) return;
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+            if (!isValidUrl(url)) {
+                newLinkInput.classList.add('is-invalid');
+                newLinkInput.value = '';
+                newLinkInput.placeholder = 'URL không hợp lệ!';
+                setTimeout(() => {
+                    newLinkInput.classList.remove('is-invalid');
+                    newLinkInput.placeholder = 'Nhập link...';
+                }, 1500);
+                return;
+            }
+            const label = new URL(url).hostname.replace(/^www\./, '');
+            savedLinks.unshift({ url, label });
+            saveLinks();
+            renderLinks();
+            newLinkInput.value = '';
+        }
+
+        function deleteLink(index) {
+            if (confirm(`Bạn có chắc muốn xóa link này không?\n${savedLinks[index].url}`)) {
+                savedLinks.splice(index, 1);
+                saveLinks();
+                renderLinks();
+            }
+        }
+
+        addLinkBtn.addEventListener('click', addLink);
+        newLinkInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addLink();
+        });
+
+        // Accessibility: close modal with Esc key
+        menuPopupEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') menuPopup.hide();
+        });
+
+        // Initial load
+        loadLinks();
+        renderLinks();
+    });
+    </script>
+</body>
+</html>
